@@ -28,12 +28,11 @@ pub fn run_analysis(dir: &std::path::Path) -> anyhow::Result<Vec<FunctionMetric>
                         continue;
                     }
                     walk_dir(&path, metrics, engine)?;
-                } else if path.extension().map_or(false, |ext| ext == "rs") {
-                    if let Ok(source) = std::fs::read_to_string(&path) {
-                        if let Ok(file_metrics) = engine.analyze_file(&path, &source) {
-                            metrics.extend(file_metrics);
-                        }
-                    }
+                } else if path.extension().is_some_and(|ext| ext == "rs")
+                    && let Ok(source) = std::fs::read_to_string(&path)
+                    && let Ok(file_metrics) = engine.analyze_file(&path, &source)
+                {
+                    metrics.extend(file_metrics);
                 }
             }
         }

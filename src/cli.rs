@@ -4,6 +4,7 @@
 #[derive(Debug)]
 pub struct SigArgs {
     pub fail_below: u8,
+    #[allow(dead_code)]
     pub format: String,
 }
 
