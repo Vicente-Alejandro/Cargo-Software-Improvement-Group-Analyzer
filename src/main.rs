@@ -10,7 +10,15 @@ use clap::Parser;
 use cli::CargoCli;
 
 fn main() -> anyhow::Result<()> {
-    let CargoCli::Sig(args) = CargoCli::parse();
+    // Cargo passes the subcommand name "sig" as the first argument when invoked as `cargo sig`.
+    // If invoked directly as `cargo-sig`, that argument is missing.
+    // We intercept the arguments to ensure both invocations work seamlessly.
+    let mut args: Vec<String> = std::env::args().collect();
+    if args.len() == 1 || (args.len() > 1 && args[1] != "sig") {
+        args.insert(1, "sig".to_string());
+    }
+
+    let CargoCli::Sig(args) = CargoCli::parse_from(args);
 
     println!("Cargo SIG Analyzer - Running check...");
 
