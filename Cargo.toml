@@ -2,5 +2,32 @@
 name = "cargo-sig"
 version = "0.1.0"
 edition = "2024"
+description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."
+authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
+repository = "https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer"
+documentation = "https://docs.rs/cargo-sig"
+readme = "README.md"
+license = "MIT"
+keywords = ["cargo-subcommand", "static-analysis", "maintainability", "code-metrics", "legacy-code"]
+categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 [dependencies]
+# CLI Parsing & Options
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# AST Parsing
+tree-sitter = "0.24"
+tree-sitter-rust = "0.23"
+
+# Git Integration (Churn & Hotspot Analysis)
+git2 = "0.19"
+
+# Serialization & Coverage Data Parsing (Tarpaulin / LLVM-COV JSON)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Output Formatting
+colored = "2.2"
+
+# Error Handling
+anyhow = "1.0"
