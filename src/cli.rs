@@ -26,16 +26,20 @@ impl SigArgs {
                 std::process::exit(0);
             }
         }
-        
+
         Self { fail_below, format }
     }
 
     fn print_help() {
         println!("cargo-sig - Software Improvement Group Analyzer");
-        println!("Zero-configuration tool to measure maintainability, duplication, and churn vs. coverage.");
+        println!(
+            "Zero-configuration tool to measure maintainability, duplication, and churn vs. coverage."
+        );
         println!("\nUsage: cargo sig [OPTIONS]");
         println!("\nOptions:");
-        println!("  --fail-below <1-7>  Quality gate: Fail if the final rating is below this threshold");
+        println!(
+            "  --fail-below <1-7>  Quality gate: Fail if the final rating is below this threshold"
+        );
         println!("  --format <format>   Output format (terminal, json, html) [default: terminal]");
         println!("  -h, --help          Print help");
     }
