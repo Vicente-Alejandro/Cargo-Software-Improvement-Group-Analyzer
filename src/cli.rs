@@ -11,7 +11,7 @@ pub enum CargoCli {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct SigArgs {
-    /// Quality gate: Fail if the final rating is below this threshold (1-5)
+    /// Quality gate: Fail if the final rating is below this threshold (1-7)
     #[arg(long, default_value = "0")]
     pub fail_below: u8,
 

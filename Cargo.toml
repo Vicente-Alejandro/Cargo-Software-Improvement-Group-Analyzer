@@ -1,6 +1,6 @@
 [package]
 name = "cargo-sig"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
