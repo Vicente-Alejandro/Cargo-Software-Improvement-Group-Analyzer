@@ -1,6 +1,6 @@
 [package]
 name = "cargo-sig"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
@@ -12,22 +12,16 @@ keywords = ["cargo-subcommand", "static-analysis", "maintainability", "code-metr
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 [dependencies]
-# CLI Parsing & Options
-clap = { version = "4.6.4", features = ["derive", "env"] }
+# Lightweight ANSI colouring — zero transitive dependencies
+owo-colors = "4.0"
 
-# AST Parsing
+# Application-layer error context (zero deps)
+anyhow = "1.0"
+
+# AST Parsing (Native)
 tree-sitter = "0.26.11"
 tree-sitter-rust = "0.24.2"
 
-# Serialization & Coverage Data Parsing (Tarpaulin / LLVM-COV JSON)
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
-# Output Formatting
-colored = "2.2"
-
-# Error Handling
-anyhow = "1.0"
-gix = "0.86.0"
-jscpd-rs = "0.1.12"
+# Concurrency
 rayon = "1.12.0"
+
