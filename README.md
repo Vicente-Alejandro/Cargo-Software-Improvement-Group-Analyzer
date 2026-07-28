@@ -25,17 +25,21 @@ It solves a specific problem: giving any Rust project a **single, comparable mai
 ```text
 $ cargo sig
 
-[cargo-sig] Cargo SIG Analyzer - Running check...
-[cargo-sig] Analysis Summary:
-[cargo-sig] Total Functions Analyzed: 31
-[cargo-sig] Functions > 15 lines (Volume): 0
-[cargo-sig] Functions > 4 parameters (Interfaces): 1
-[cargo-sig] Functions > 5 branches (Complexity): 1
+[cargo-sig] Cargo SIG - Running check...
+[cargo-sig] 
+[cargo-sig] Summary:
+[cargo-sig] Total Functions: 38
+[cargo-sig] Volume > 15 lines: 0
+[cargo-sig] Interface > 4 params: 1
+[cargo-sig] Complexity > 5 branches: 1
+[cargo-sig] 
+[cargo-sig] ⚠️ Architectural Hotspots (High Risk + High Churn):
+[cargo-sig]   1. main.rs (9 commits, 45 risk LOC)
 [cargo-sig] 
 [cargo-sig] Risk Profile:
-[cargo-sig] Moderate Risk Code: 6.0%
-[cargo-sig] High Risk Code: 0.0%
-[cargo-sig] Very High Risk Code: 0.0%
+[cargo-sig] Moderate Risk: 4.5%
+[cargo-sig] High Risk: 0.0%
+[cargo-sig] Very High Risk: 0.0%
 [cargo-sig] ─────────────────────────────────────
 [cargo-sig] Maintainability Rating: ★★★★★★★ (7 / 7)
 ```
