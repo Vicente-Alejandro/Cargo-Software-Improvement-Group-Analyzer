@@ -1,15 +1,23 @@
 [package]
 name = "cargo-sig"
 version = "0.4.2"
+rust-version = "1.85"
 edition = "2024"
 description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
-repository = "https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer"
+repository = "https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer-"
 documentation = "https://docs.rs/cargo-sig"
 readme = "README.md"
 license = "MIT"
 keywords = ["cargo-subcommand", "static-analysis", "maintainability", "code-metrics", "legacy-code"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
+
+exclude = [
+    "ROADMAP.md",
+    "coverage.lcov",
+    ".github/",
+    ".agents/",
+]
 
 [dependencies]
 # Lightweight ANSI colouring — zero transitive dependencies
