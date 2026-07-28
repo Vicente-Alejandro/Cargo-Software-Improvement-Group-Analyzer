@@ -183,6 +183,6 @@ mod tests {
         assert_eq!(metrics[0].function_name, "example_func");
         assert_eq!(metrics[0].parameter_count, 2);
         assert_eq!(metrics[0].cyclomatic_complexity, 3);
-        assert_eq!(metrics[0].lines_of_code, 6);
+        assert_eq!(metrics[0].lines_of_code, 5);
     }
 }

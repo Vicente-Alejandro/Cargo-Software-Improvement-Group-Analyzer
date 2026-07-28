@@ -10,15 +10,20 @@ use analysis::FunctionMetric;
 use cli::SigArgs;
 use owo_colors::OwoColorize;
 use scoring::Score;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 fn main() -> anyhow::Result<()> {
     let args = parse_args();
-    println!("{} - Running check...", "Cargo SIG Analyzer".bold().cyan());
+    println!("{} - Running check...", "Cargo SIG".bold().cyan());
 
-    let metrics = analysis::run_analysis(&std::env::current_dir()?)?;
+    let dir = std::env::current_dir()?;
+    let metrics = analysis::run_analysis(&dir)?;
+    let churns = churn::get_frequencies(&dir).unwrap_or_default();
     let score = scoring::evaluate(&metrics);
 
     print_summary(&metrics);
+    print_hotspots(&metrics, &churns);
     print_profile(&score);
     enforce_gate(score.stars, args.fail_below);
     Ok(())
@@ -45,12 +50,11 @@ fn print_summary(metrics: &[FunctionMetric]) {
             cmp += 1;
         }
     }
-
-    println!("\n{}", "Analysis Summary:".bold());
-    println!("Total Functions Analyzed: {}", metrics.len());
-    println!("Functions > 15 lines (Volume): {}", color(loc));
-    println!("Functions > 4 parameters (Interfaces): {}", color(prm));
-    println!("Functions > 5 branches (Complexity): {}", color(cmp));
+    println!("\n{}", "Summary:".bold());
+    println!("Total Functions: {}", metrics.len());
+    println!("Volume > 15 lines: {}", color(loc));
+    println!("Interface > 4 params: {}", color(prm));
+    println!("Complexity > 5 branches: {}", color(cmp));
 }
 
 fn color(val: usize) -> String {
@@ -61,15 +65,56 @@ fn color(val: usize) -> String {
     }
 }
 
+fn print_hotspots(metrics: &[FunctionMetric], churns: &HashMap<PathBuf, usize>) {
+    let mut h = match_hotspots(&compute_file_risk(metrics), churns);
+    if h.is_empty() {
+        println!("\n{} No Hotspots.", "✅ [OK]".green().bold());
+        return;
+    }
+    h.sort_by_key(|i| std::cmp::Reverse(i.1 * i.2));
+    println!("\n{}", "⚠️ Hotspots:".bold().yellow());
+    for (i, (p, r, c)) in h.iter().take(5).enumerate() {
+        let n = p.file_name().unwrap_or_default().to_string_lossy();
+        println!("  {}. {} ({} commits, {} risk LOC)", i + 1, n.red(), c, r);
+    }
+}
+
+fn compute_file_risk(metrics: &[FunctionMetric]) -> HashMap<PathBuf, usize> {
+    let mut f_risk = HashMap::new();
+    for m in metrics {
+        if m.lines_of_code > 30 || m.cyclomatic_complexity > 10 {
+            let key = m
+                .file_path
+                .canonicalize()
+                .unwrap_or_else(|_| m.file_path.clone());
+            *f_risk.entry(key).or_insert(0) += m.lines_of_code;
+        }
+    }
+    f_risk
+}
+
+fn match_hotspots(
+    f_risk: &HashMap<PathBuf, usize>,
+    ch: &HashMap<PathBuf, usize>,
+) -> Vec<(PathBuf, usize, usize)> {
+    let mut hotspots = Vec::new();
+    for (path, &risk_loc) in f_risk {
+        let commits = ch.get(path).copied().unwrap_or(0);
+        if commits > 1 {
+            hotspots.push((path.clone(), risk_loc, commits));
+        }
+    }
+    hotspots
+}
+
 fn print_profile(score: &Score) {
     println!("\n{}", "Risk Profile:".bold());
-    println!("Moderate Risk Code: {:.1}%", score.pct_moderate.yellow());
-    println!("High Risk Code: {:.1}%", score.pct_high.bright_red());
+    println!("Moderate Risk: {:.1}%", score.pct_moderate.yellow());
+    println!("High Risk: {:.1}%", score.pct_high.bright_red());
     println!(
-        "Very High Risk Code: {:.1}%",
+        "Very High Risk: {:.1}%",
         score.pct_very_high.red().on_black()
     );
-
     println!("\n─────────────────────────────────────");
     let c = format_stars(score.stars);
     println!("Maintainability Rating: {} ({} / 7)", c, score.stars);
@@ -90,7 +135,7 @@ fn enforce_gate(stars: u8, gate: u8) {
     }
     if stars < gate {
         println!(
-            "\n{} Rating {} is below the required gate of {} stars.",
+            "\n{} Rating {} below gate {}.",
             "❌ [ERROR]".red().bold(),
             stars,
             gate
@@ -98,7 +143,7 @@ fn enforce_gate(stars: u8, gate: u8) {
         std::process::exit(1);
     }
     println!(
-        "\n{} Passed the quality gate ({} >= {}).",
+        "\n{} Passed gate ({} >= {}).",
         "✅ [OK]".green().bold(),
         stars,
         gate

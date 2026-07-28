@@ -33,12 +33,12 @@
 - [x] **Parallel Processing:** Implement parallel AST parsing across multiple files using `rayon`.
 - [x] **CI/CD Quality Gate:** Implement the logic for `--fail-below <1-7>` flag to fail the process.
 
-## v0.4.0 — Hotspots (Churn vs. Coverage)
-**Status:** Planned
+## v0.4.1 — Hotspots (Churn)
+**Status:** Completed
 
-- [ ] **Git History Parser:** Integrate `gix` (with ultra-minimal features) to measure churn per file.
+- [x] **Git History Parser:** Use `std::process::Command` to read `git log` and calculate file churn.
 - [ ] **Coverage Ingestion:** Parse LLVM-COV JSON.
-- [ ] **Component Balance:** Analyze module-level coupling and boundaries.
+- [ ] **Component Balance:** Analyze module-level coupling. and boundaries.
 
 ---
 

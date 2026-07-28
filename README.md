@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.3.1` — pre-release, not yet published to crates.io.
+**Current version:** `0.4.1` — pre-release, not yet published to crates.io.
 
 </div>
 
@@ -125,7 +125,7 @@ cargo sig
 |---|---|---|
 | `--fail-below <N>` | Exit non-zero if the rating drops below `N` stars (1–7) — for CI quality gates | Completed |
 | `--format json\|html` | Export the detailed report instead of the terminal summary | Planned |
-| `hotspots` | Print only the Churn × Coverage hotspot ranking | Planned |
+| `hotspots` | Print only the Churn × Coverage hotspot ranking | Completed |
 | `--no-color` | Disable colored terminal output (also respects `NO_COLOR`) | Planned |
 
 Example — using it as a CI quality gate:
@@ -144,7 +144,7 @@ cargo sig --fail-below 3
 | SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Completed |
 | SIG Guideline 3 — Write Code Once | Duplication percentage | Planned |
 | SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
-| Churn × Coverage | Cross-references `git log` history with `cargo-llvm-cov` JSON output | Planned |
+| Churn × Coverage | Cross-references `git log` history with bad quality files | Completed |
 | Scoring Engine | Normalizes all of the above into a 1–7 star rating | Completed |
 
 See [ROADMAP.md](./ROADMAP.md) for the full technical breakdown of each phase, the crates each module depends on, and open architectural risks.
