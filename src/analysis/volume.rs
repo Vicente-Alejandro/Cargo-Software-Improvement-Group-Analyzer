@@ -2,16 +2,16 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct FunctionMetric {
+    #[allow(dead_code)]
     pub file_path: PathBuf,
+    #[allow(dead_code)]
     pub function_name: String,
     pub lines_of_code: usize,
     pub parameter_count: usize,
+    pub cyclomatic_complexity: usize,
 }
 
-pub struct VolumeEngine {
-    // We will construct this as a deep module.
-    // In later phases, this will use rayon to parallelize over files.
-}
+pub struct VolumeEngine {}
 
 impl VolumeEngine {
     pub fn new() -> Self {
@@ -49,25 +49,71 @@ impl VolumeEngine {
                 let mut func_name = "unknown".to_string();
                 let mut param_count = 0;
 
-                for child in node.children(&mut tree.walk()) {
-                    if child.kind() == "identifier" {
+                // Base complexity is 1 (the function itself)
+                let mut complexity = 1;
+
+                // We need to walk the entire subtree of the function to count parameters and complexity
+                let mut func_cursor = node.walk();
+                let mut func_needs_visit = true;
+                
+                while func_needs_visit {
+                    let child = func_cursor.node();
+                    let kind = child.kind();
+                    
+                    // Identify function name
+                    if kind == "identifier" && child.parent().map(|p| p.kind()) == Some("function_item") {
                         func_name = child
                             .utf8_text(source_code.as_bytes())
                             .unwrap_or("unknown")
                             .to_string();
                     }
-                    if child.kind() == "parameters" {
-                        // Count named parameters. In tree-sitter-rust, `parameters` contains things like `(`, `)`, `,` and `parameter`.
-                        // A rough parameter count is counting actual `parameter` nodes, or taking named children count if available.
-                        let mut param_cursor = child.walk();
-                        let mut has_next = param_cursor.goto_first_child();
-                        while has_next {
-                            let p_node = param_cursor.node();
-                            // In rust grammar, the actual parameters are called "parameter", "self_parameter", etc.
-                            if p_node.kind() == "parameter" || p_node.kind() == "self_parameter" {
-                                param_count += 1;
+                    
+                    // Identify parameters
+                    if kind == "parameter" || kind == "self_parameter" {
+                        param_count += 1;
+                    }
+                    
+                    // Cyclomatic complexity branches
+                    match kind {
+                        "if_expression" | "while_expression" | "for_expression" | "loop_expression" | "match_arm" => {
+                            complexity += 1;
+                        }
+                        "binary_expression" => {
+                            // Check if operator is && or ||
+                            // In tree-sitter-rust, the operator is a child of the binary_expression
+                            // But for simplicity and zero-bloat, we just count binary expressions that contain && or || text
+                            if let Ok(text) = child.utf8_text(source_code.as_bytes()) {
+                                if text.contains("&&") || text.contains("||") {
+                                    // This is a naive heuristic that works reasonably well for complexity estimation
+                                    // without doing deep operator introspection
+                                    complexity += 1;
+                                }
                             }
-                            has_next = param_cursor.goto_next_sibling();
+                        }
+                        _ => {}
+                    }
+
+                    // Preorder traversal within the function subtree
+                    if func_cursor.goto_first_child() {
+                        continue;
+                    }
+                    if func_cursor.goto_next_sibling() {
+                        continue;
+                    }
+                    
+                    // Ascend
+                    loop {
+                        if !func_cursor.goto_parent() {
+                            func_needs_visit = false;
+                            break;
+                        }
+                        // Stop if we've ascended back to the function_item itself
+                        if func_cursor.node() == node {
+                            func_needs_visit = false;
+                            break;
+                        }
+                        if func_cursor.goto_next_sibling() {
+                            break;
                         }
                     }
                 }
@@ -77,11 +123,12 @@ impl VolumeEngine {
                     function_name: func_name,
                     lines_of_code: loc,
                     parameter_count: param_count,
+                    cyclomatic_complexity: complexity,
                 });
             }
 
-            // Standard preorder traversal
-            if cursor.goto_first_child() {
+            // Standard preorder traversal (skipping internals of function_item since we handled them)
+            if node.kind() != "function_item" && cursor.goto_first_child() {
                 continue;
             }
             if cursor.goto_next_sibling() {
