@@ -108,7 +108,7 @@ fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) {
     }
 }
 
-fn print_imbalance(d: &PathBuf, pct: f32) {
+fn print_imbalance(d: &Path, pct: f32) {
     let n = d.file_name().unwrap_or_default().to_string_lossy();
     println!(
         "  {} {} contains {:.1}% of total code.",
@@ -132,7 +132,7 @@ fn print_hotspots(m: &[FunctionMetric], ch: &HashMap<PathBuf, usize>, cov: &Opti
     }
 }
 
-fn print_hotspot_item(i: usize, p: &PathBuf, r: usize, c: usize, cv: Option<f32>) {
+fn print_hotspot_item(i: usize, p: &Path, r: usize, c: usize, cv: Option<f32>) {
     let n = p.file_name().unwrap_or_default().to_string_lossy();
     let c_str = cv
         .map(|v| format!("{:.0}% cov", v))
