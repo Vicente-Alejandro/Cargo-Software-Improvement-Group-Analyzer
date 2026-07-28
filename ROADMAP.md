@@ -55,13 +55,13 @@
 ---
 
 ## v0.6.0 — Scoring Integrity Fix
-**Status:** Planned
+**Status:** Completed
 
 An audit of `scoring/mod.rs` confirmed that `categorize_risk()` only factors in `lines_of_code` and `cyclomatic_complexity` (SIG Guidelines 1 & 2), plus Duplication (Guideline 3, wired in during v0.5.0. Interface Size (Guideline 4) and Component Balance (Guideline 7) are computed and *reported* to the terminal, but never reach the star-rating formula. A function with 30 parameters can currently still score 7 stars.
 
-- [ ] **Fix:** wire Interface Size (Guideline 4, >4 parameters) into `categorize_risk()`.
-- [ ] **Fix:** wire Component Balance (Guideline 7, >50% LOC in one directory) into the scoring formula — currently console-only in `report/mod.rs`.
-- [ ] **Regression test:** extend the existing test suite (established in v0.4.0) with an assertion that every computed metric provably influences the final score, so this class of bug can't silently reappear when the next guideline is added.
+- [x] **Fix:** wire Interface Size (Guideline 4, >4 parameters) into `categorize_risk()`.
+- [x] **Fix:** wire Component Balance (Guideline 7, >50% LOC in one directory) into the scoring formula — currently console-only in `report/mod.rs`.
+- [x] **Regression test:** extend the existing test suite (established in v0.4.0) with an assertion that every computed metric provably influences the final score, so this class of bug can't silently reappear when the next guideline is added.
 
 This release is deliberately scoped to correctness only — no new features — so it can be reviewed and shipped as an atomic fix ahead of anything else in the v0.6 series.
 

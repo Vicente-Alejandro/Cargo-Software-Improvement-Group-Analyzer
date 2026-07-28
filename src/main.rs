@@ -26,7 +26,8 @@ fn main() -> anyhow::Result<()> {
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
 
     let cov = coverage::read_lcov(&dir);
-    let score = scoring::evaluate(&metrics, dup_pct);
+    let is_balanced = report::is_balanced(&metrics);
+    let score = scoring::evaluate(&metrics, dup_pct, is_balanced);
 
     let res = report::AnalysisResult {
         metrics: &metrics,

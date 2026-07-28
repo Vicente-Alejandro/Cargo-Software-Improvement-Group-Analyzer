@@ -59,7 +59,25 @@ fn color(val: usize) -> String {
     }
 }
 
-fn print_balance(metrics: &[FunctionMetric]) {
+pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
+    let mut d = HashMap::new();
+    let mut tot = 0;
+    for m in metrics {
+        let p = m.file_path.parent().unwrap_or(Path::new("")).to_path_buf();
+        *d.entry(p).or_insert(0) += m.lines_of_code;
+        tot += m.lines_of_code;
+    }
+    let mut ok = true;
+    for (_, loc) in d {
+        let pct = (loc as f32 / tot as f32) * 100.0;
+        if pct > 50.0 {
+            ok = false;
+        }
+    }
+    ok
+}
+
+pub fn print_balance(metrics: &[FunctionMetric]) -> bool {
     println!("\n{}", "Component Balance:".bold());
     let mut d = HashMap::new();
     let mut tot = 0;
@@ -68,10 +86,10 @@ fn print_balance(metrics: &[FunctionMetric]) {
         *d.entry(p).or_insert(0) += m.lines_of_code;
         tot += m.lines_of_code;
     }
-    check_balance(d, tot);
+    check_balance(d, tot)
 }
 
-fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) {
+fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) -> bool {
     let mut ok = true;
     for (d, loc) in dirs {
         let pct = (loc as f32 / tot as f32) * 100.0;
@@ -83,6 +101,7 @@ fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) {
     if ok {
         println!("  {} All components are balanced.", "✅".green());
     }
+    ok
 }
 
 fn print_imbalance(d: &Path, pct: f32) {
