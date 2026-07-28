@@ -1,59 +1,211 @@
-# cargo-sig ⭐️
+<div align="center">
 
-**Cargo Software Improvement Group Analyzer**
+# Cargo Software Improvement Group Analyzer
 
-`cargo-sig` is an ultra-minimal, high-performance static analysis tool for Rust projects. It evaluates your codebase based on the [Software Improvement Group (SIG)](https://www.softwareimprovementgroup.com/) maintainability model and translates the metrics into a **1 to 7 star rating**.
+**Local maintainability rating for Rust projects — SIG methodology, zero SaaS.**
 
-Built with **Data-Oriented Design** and **Fearless Concurrency** in mind, `cargo-sig` compiles in seconds and runs in milliseconds. We deliberately eliminated hundreds of transitive dependencies (no `clap`, no async runtimes, no web servers) to keep the footprint as small as possible.
+[![Crates.io](https://img.shields.io/crates/v/cargo-sig.svg?style=flat-square&color=orange)](https://crates.io/crates/cargo-sig)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
+
+`tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
+
+**Current version:** `0.2.1` — pre-release, not yet published to crates.io.
+
+</div>
 
 ---
 
-## Features
+## Overview
 
-- **Zero-Configuration:** No setup required. Just run `cargo sig` in any Rust project directory.
-- **Deep Modules & Native Parsing:** Uses `tree-sitter` for robust, native Abstract Syntax Tree (AST) traversal.
-- **Data-Oriented Metrics:** Collects metrics in flat arrays for cache-coherent performance.
-- **SIG 10 Guidelines Evaluation:**
-  - **Rule 1 (Short Units):** Flags functions exceeding 15 lines of code.
-  - **Rule 4 (Small Interfaces):** Flags function signatures with more than 4 parameters.
-  - *(More rules coming in future phases)*
-- **Quality Gates:** Built-in support for CI/CD pipelines to fail builds if the codebase drops below a desired star rating.
+`cargo-sig` is a zero-configuration Cargo subcommand that rates the maintainability of a Rust codebase using the [Software Improvement Group (SIG)](https://www.softwareimprovementgroup.com/) model — the same system behind Better Code Hub — cross-referenced with a Churn × Coverage hotspot analysis inspired by Michael Feathers' *Working Effectively with Legacy Code*.
+
+It solves a specific problem: giving any Rust project a **single, comparable maintainability score**, computed locally from its own AST and Git history — no uploading code to a SaaS dashboard, no dependency on a paid platform like CodeScene or SonarQube.
+
+```text
+$ cargo sig
+
+[cargo-sig] Analyzing crate: my-project v0.3.2
+[cargo-sig] Volume & Complexity ...    ✅  312 units analyzed
+[cargo-sig] Duplication ...            ✅  1.2% duplicated
+[cargo-sig] Churn × Coverage ...       ⚠️  3 hotspots found
+[cargo-sig] ─────────────────────────────────────
+[cargo-sig] Maintainability Rating: ★★★★★★☆ (6 / 7)
+```
+
+*(Illustrative output — exact formatting will stabilize as the phases in [ROADMAP.md](./ROADMAP.md) land.)*
+
+---
+
+## Table of Contents
+
+- [Why cargo-sig](#why-cargo-sig)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [What Gets Measured](#what-gets-measured)
+- [CI Integration](#ci-integration)
+- [Exit Codes](#exit-codes)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Why cargo-sig
+
+Static analysis for Rust today means either a fast linter (`clippy`) that checks style and correctness, or a paid SaaS platform that computes maintainability trends from your Git history. There is no local, native middle ground.
+
+`cargo-sig` gives you:
+
+- **A published, non-arbitrary model.** Ratings are computed against SIG's [10 Guidelines for Maintainable Software](https://www.softwareimprovementgroup.com/) — the same guidelines behind Better Code Hub — not an invented scoring formula.
+- **Churn-aware prioritization.** Complexity alone doesn't tell you what to refactor first. Crossing it with how often a file actually changes (via Git history) surfaces the handful of files doing the most damage — the "hotspots" from Adam Tornhill's *Your Code as a Crime Scene*.
+- **Native AST parsing.** Built directly on [`tree-sitter`](https://tree-sitter.github.io/tree-sitter/) with the official Rust grammar — no external metrics service, no Node.js runtime.
+- **CI-ready by design.** Fail a build the moment a project's rating drops below a threshold you set.
+
+---
+
+## Requirements
+
+| Requirement | Minimum version |
+|---|---|
+| Rust toolchain | 1.85.0 (required by the 2024 edition) |
+| Cargo | ships with Rust |
+| Operating system | Linux · macOS · Windows |
+| Git | required for the Churn analysis module |
+
+**Core dependencies:** `tree-sitter` + `tree-sitter-rust` (AST) · `owo-colors` (terminal output) · `anyhow` (errors). *We aggressively hand-roll features like CLI parsing (`std::env::args`) to maintain an ultra-minimal dependency tree.*
+
+---
 
 ## Installation
 
-Currently, `cargo-sig` is in active development (v0.2.1). You can install it locally from source:
+`cargo-sig` is under active development and not yet published to crates.io.
+
+**From source:**
 
 ```bash
-git clone https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer-.git
-cd cargo-sig
+git clone https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer.git
+cd Cargo-Software-Improvement-Group-Analyzer
 cargo install --path .
 ```
 
-*(Thanks to our ultra-minimal architecture, compilation takes < 20 seconds from scratch!)*
+**From crates.io (once published):**
 
-## Usage
+```bash
+cargo install cargo-sig
+```
 
-Navigate to any Rust project and run:
+After installation, run it as a Cargo subcommand in any project:
 
 ```bash
 cargo sig
 ```
 
-### Advanced Options
+---
 
-You can trigger a failure (exit code `1`) if the project does not meet your quality standards. This is perfect for GitHub Actions or CI pipelines:
+## Usage
+
+From the root of any Rust project:
 
 ```bash
-cargo sig --fail-below 4
+cargo sig
 ```
 
-## Architecture Roadmap
+### Command-line Arguments
 
-The project is actively being developed. See [ROADMAP.md](./ROADMAP.md) for the detailed implementation phases covering:
-- Concurrency via `rayon`.
-- Cyclomatic Complexity (Rule 2).
-- Hotspot Analysis (Churn vs Coverage).
-- Component Balance (Module Coupling).
+| Flag | Description | Status |
+|---|---|---|
+| `--fail-below <N>` | Exit non-zero if the rating drops below `N` stars (1–7) — for CI quality gates | Roadmap Phase 3 |
+| `--format json\|html` | Export the detailed report instead of the terminal summary | Planned |
+| `hotspots` | Print only the Churn × Coverage hotspot ranking | Planned |
+| `--no-color` | Disable colored terminal output (also respects `NO_COLOR`) | Planned |
+
+Example — using it as a CI quality gate:
+
+```bash
+cargo sig --fail-below 3
+```
+
+---
+
+## What Gets Measured
+
+| Guideline / Module | What it checks | Status |
+|---|---|---|
+| SIG Guideline 1 — Short Units | Flags units longer than 15 lines of code | Completed |
+| SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Planned |
+| SIG Guideline 3 — Write Code Once | Duplication percentage | Planned |
+| SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
+| Churn × Coverage | Cross-references `git log` history with `cargo-llvm-cov` JSON output | Planned |
+| Scoring Engine | Normalizes all of the above into a 1–7 star rating | Planned |
+
+See [ROADMAP.md](./ROADMAP.md) for the full technical breakdown of each phase, the crates each module depends on, and open architectural risks.
+
+---
+
+## CI Integration
+
+`cargo-sig` exits with a non-zero code when a project's rating falls below the configured threshold, making it compatible with any CI system that checks exit codes.
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/sig.yml
+name: Maintainability Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cargo-sig:
+    name: cargo-sig
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history — required by the Churn module
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-sig
+        run: cargo install --path .
+        # Or: cargo install cargo-sig (once published)
+
+      - name: Run maintainability gate
+        run: cargo sig --fail-below 3
+```
+
+> **Note:** the Churn module needs full Git history, not a shallow clone — set `fetch-depth: 0` in `actions/checkout`.
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Rating met or exceeded the configured threshold |
+| `1` | Rating fell below the threshold, or a check failed |
+| `2` | Internal error — could not parse the project or read its Git history |
+
+---
+
+## Roadmap
+
+This is an active, phased build. See [ROADMAP.md](./ROADMAP.md) for the full plan — theoretical foundations, verified dependency choices, an architecture diagram, and phase-by-phase milestones from the current AST engine through the complete 1–7 star scoring model.
+
+---
+
+## Contributing
+
+This project is currently developed as part of a personal engineering portfolio. Issues and discussion are welcome; contribution guidelines will be published once the core analysis engine (Phases 0–2 of the roadmap) is stable.
+
+---
 
 ## License
 
