@@ -1,6 +1,6 @@
 use crate::analysis::FunctionMetric;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Score {
     pub stars: u8,
     pub pct_moderate: f64,
@@ -8,80 +8,124 @@ pub struct Score {
     pub pct_very_high: f64,
 }
 
+enum Risk {
+    Low,
+    Moderate,
+    High,
+    VeryHigh,
+}
+
 pub fn evaluate(metrics: &[FunctionMetric]) -> Score {
     if metrics.is_empty() {
         return Score {
             stars: 7,
-            pct_moderate: 0.0,
-            pct_high: 0.0,
-            pct_very_high: 0.0,
+            ..Default::default()
         };
     }
-
-    let mut total_loc = 0;
-    let mut moderate_loc = 0;
-    let mut high_loc = 0;
-    let mut very_high_loc = 0;
-
+    let mut totals = [0, 0, 0, 0];
     for m in metrics {
-        total_loc += m.lines_of_code;
-
-        let is_very_high = m.lines_of_code > 60 || m.cyclomatic_complexity > 25;
-        let is_high = !is_very_high && (m.lines_of_code > 30 || m.cyclomatic_complexity > 10);
-        let is_moderate = !is_very_high && !is_high && (m.lines_of_code > 15 || m.cyclomatic_complexity > 5);
-
-        if is_very_high {
-            very_high_loc += m.lines_of_code;
-        } else if is_high {
-            high_loc += m.lines_of_code;
-        } else if is_moderate {
-            moderate_loc += m.lines_of_code;
-        }
+        totals[0] += m.lines_of_code;
+        add_risk(&mut totals, categorize_risk(m), m.lines_of_code);
     }
+    compute_score(totals)
+}
 
-    if total_loc == 0 {
-        total_loc = 1; // Prevent division by zero
-    }
-
-    let pct_moderate = (moderate_loc as f64 / total_loc as f64) * 100.0;
-    let pct_high = (high_loc as f64 / total_loc as f64) * 100.0;
-    let pct_very_high = (very_high_loc as f64 / total_loc as f64) * 100.0;
-
-    let stars = calculate_stars(pct_moderate, pct_high, pct_very_high);
-
-    Score {
-        stars,
-        pct_moderate,
-        pct_high,
-        pct_very_high,
+fn add_risk(t: &mut [usize; 4], r: Risk, loc: usize) {
+    match r {
+        Risk::VeryHigh => t[3] += loc,
+        Risk::High => t[2] += loc,
+        Risk::Moderate => t[1] += loc,
+        Risk::Low => {}
     }
 }
 
-fn calculate_stars(mod_pct: f64, high_pct: f64, vhigh_pct: f64) -> u8 {
-    // 7 Stars (Perfection): 0% Very High, <= 2% High, <= 10% Moderate
-    if vhigh_pct == 0.0 && high_pct <= 2.0 && mod_pct <= 10.0 {
-        return 7;
+fn categorize_risk(m: &FunctionMetric) -> Risk {
+    if is_vhigh(m) {
+        return Risk::VeryHigh;
     }
-    // 6 Stars (Excellent): 0% Very High, <= 5% High, <= 15% Moderate
-    if vhigh_pct == 0.0 && high_pct <= 5.0 && mod_pct <= 15.0 {
-        return 6;
+    if is_high(m) {
+        return Risk::High;
     }
-    // 5 Stars (Good): <= 2% Very High, <= 10% High, <= 20% Moderate
-    if vhigh_pct <= 2.0 && high_pct <= 10.0 && mod_pct <= 20.0 {
-        return 5;
+    if is_mod(m) {
+        return Risk::Moderate;
     }
-    // 4 Stars (Average): <= 5% Very High, <= 15% High, <= 30% Moderate
-    if vhigh_pct <= 5.0 && high_pct <= 15.0 && mod_pct <= 30.0 {
-        return 4;
+    Risk::Low
+}
+
+fn is_vhigh(m: &FunctionMetric) -> bool {
+    m.lines_of_code > 60 || m.cyclomatic_complexity > 25
+}
+fn is_high(m: &FunctionMetric) -> bool {
+    m.lines_of_code > 30 || m.cyclomatic_complexity > 10
+}
+fn is_mod(m: &FunctionMetric) -> bool {
+    m.lines_of_code > 15 || m.cyclomatic_complexity > 5
+}
+
+fn compute_score(t: [usize; 4]) -> Score {
+    let tot = if t[0] == 0 { 1.0 } else { t[0] as f64 };
+    Score {
+        stars: calculate_stars(
+            (t[1] as f64 / tot) * 100.0,
+            (t[2] as f64 / tot) * 100.0,
+            (t[3] as f64 / tot) * 100.0,
+        ),
+        pct_moderate: (t[1] as f64 / tot) * 100.0,
+        pct_high: (t[2] as f64 / tot) * 100.0,
+        pct_very_high: (t[3] as f64 / tot) * 100.0,
     }
-    // 3 Stars (Mediocre): <= 10% Very High, <= 20% High, <= 40% Moderate
-    if vhigh_pct <= 10.0 && high_pct <= 20.0 && mod_pct <= 40.0 {
-        return 3;
+}
+
+struct Threshold {
+    v: f64,
+    h: f64,
+    m: f64,
+    stars: u8,
+}
+const THRESHOLDS: [Threshold; 6] = [
+    Threshold {
+        v: 0.0,
+        h: 2.0,
+        m: 10.0,
+        stars: 7,
+    },
+    Threshold {
+        v: 0.0,
+        h: 5.0,
+        m: 15.0,
+        stars: 6,
+    },
+    Threshold {
+        v: 2.0,
+        h: 10.0,
+        m: 20.0,
+        stars: 5,
+    },
+    Threshold {
+        v: 5.0,
+        h: 15.0,
+        m: 30.0,
+        stars: 4,
+    },
+    Threshold {
+        v: 10.0,
+        h: 20.0,
+        m: 40.0,
+        stars: 3,
+    },
+    Threshold {
+        v: 15.0,
+        h: 30.0,
+        m: 50.0,
+        stars: 2,
+    },
+];
+
+fn calculate_stars(m: f64, h: f64, v: f64) -> u8 {
+    for t in THRESHOLDS {
+        if v <= t.v && h <= t.h && m <= t.m {
+            return t.stars;
+        }
     }
-    // 2 Stars (Poor): <= 15% Very High, <= 30% High, <= 50% Moderate
-    if vhigh_pct <= 15.0 && high_pct <= 30.0 && mod_pct <= 50.0 {
-        return 2;
-    }
-    // 1 Star (Critical): Anything worse
     1
 }

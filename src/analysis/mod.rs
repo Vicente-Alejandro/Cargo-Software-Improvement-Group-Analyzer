@@ -1,50 +1,49 @@
 pub mod volume;
 
-pub use volume::{FunctionMetric, VolumeEngine};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
+pub use volume::{FunctionMetric, VolumeEngine};
 
 pub fn run_analysis(dir: &Path) -> anyhow::Result<Vec<FunctionMetric>> {
     let engine = VolumeEngine::new();
-    
-    // 1. Gather all .rs files recursively using std::fs to maintain zero-bloat
     let mut files = Vec::new();
     gather_files(dir, &mut files)?;
-    
-    // 2. Process all files in parallel using rayon
-    let all_metrics: Vec<FunctionMetric> = files
+
+    let metrics = files
         .into_par_iter()
-        .filter_map(|path| {
-            if let Ok(source) = std::fs::read_to_string(&path) {
-                if let Ok(metrics) = engine.analyze_file(&path, &source) {
-                    return Some(metrics);
-                }
-            }
-            None
-        })
+        .filter_map(|path| parse_file(&engine, path))
         .flatten()
         .collect();
+    Ok(metrics)
+}
 
-    Ok(all_metrics)
+fn parse_file(engine: &VolumeEngine, path: PathBuf) -> Option<Vec<FunctionMetric>> {
+    let source = std::fs::read_to_string(&path).ok()?;
+    engine.analyze_file(&path, &source).ok()
 }
 
 fn gather_files(dir: &Path, files: &mut Vec<PathBuf>) -> anyhow::Result<()> {
-    if dir.is_dir() {
-        for entry in std::fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-
-            if path.is_dir() {
-                let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-                // Skip target and hidden directories
-                if file_name.starts_with('.') || file_name == "target" {
-                    continue;
-                }
-                gather_files(&path, files)?;
-            } else if path.extension().is_some_and(|ext| ext == "rs") {
-                files.push(path);
-            }
-        }
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+        process_entry(&entry?.path(), files)?;
     }
     Ok(())
+}
+
+fn process_entry(path: &Path, files: &mut Vec<PathBuf>) -> anyhow::Result<()> {
+    if path.is_dir() {
+        if is_valid_dir(path) {
+            gather_files(path, files)?;
+        }
+    } else if path.extension().is_some_and(|e| e == "rs") {
+        files.push(path.to_path_buf());
+    }
+    Ok(())
+}
+
+fn is_valid_dir(path: &Path) -> bool {
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    !name.starts_with('.') && name != "target"
 }
