@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.2.1` — pre-release, not yet published to crates.io.
+**Current version:** `0.3.1` — pre-release, not yet published to crates.io.
 
 </div>
 
@@ -25,12 +25,19 @@ It solves a specific problem: giving any Rust project a **single, comparable mai
 ```text
 $ cargo sig
 
-[cargo-sig] Analyzing crate: my-project v0.3.2
-[cargo-sig] Volume & Complexity ...    ✅  312 units analyzed
-[cargo-sig] Duplication ...            ✅  1.2% duplicated
-[cargo-sig] Churn × Coverage ...       ⚠️  3 hotspots found
+[cargo-sig] Cargo SIG Analyzer - Running check...
+[cargo-sig] Analysis Summary:
+[cargo-sig] Total Functions Analyzed: 31
+[cargo-sig] Functions > 15 lines (Volume): 0
+[cargo-sig] Functions > 4 parameters (Interfaces): 1
+[cargo-sig] Functions > 5 branches (Complexity): 1
+[cargo-sig] 
+[cargo-sig] Risk Profile:
+[cargo-sig] Moderate Risk Code: 6.0%
+[cargo-sig] High Risk Code: 0.0%
+[cargo-sig] Very High Risk Code: 0.0%
 [cargo-sig] ─────────────────────────────────────
-[cargo-sig] Maintainability Rating: ★★★★★★☆ (6 / 7)
+[cargo-sig] Maintainability Rating: ★★★★★★★ (7 / 7)
 ```
 
 *(Illustrative output — exact formatting will stabilize as the phases in [ROADMAP.md](./ROADMAP.md) land.)*
@@ -116,7 +123,7 @@ cargo sig
 
 | Flag | Description | Status |
 |---|---|---|
-| `--fail-below <N>` | Exit non-zero if the rating drops below `N` stars (1–7) — for CI quality gates | Roadmap Phase 3 |
+| `--fail-below <N>` | Exit non-zero if the rating drops below `N` stars (1–7) — for CI quality gates | Completed |
 | `--format json\|html` | Export the detailed report instead of the terminal summary | Planned |
 | `hotspots` | Print only the Churn × Coverage hotspot ranking | Planned |
 | `--no-color` | Disable colored terminal output (also respects `NO_COLOR`) | Planned |
@@ -134,11 +141,11 @@ cargo sig --fail-below 3
 | Guideline / Module | What it checks | Status |
 |---|---|---|
 | SIG Guideline 1 — Short Units | Flags units longer than 15 lines of code | Completed |
-| SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Planned |
+| SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Completed |
 | SIG Guideline 3 — Write Code Once | Duplication percentage | Planned |
 | SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
 | Churn × Coverage | Cross-references `git log` history with `cargo-llvm-cov` JSON output | Planned |
-| Scoring Engine | Normalizes all of the above into a 1–7 star rating | Planned |
+| Scoring Engine | Normalizes all of the above into a 1–7 star rating | Completed |
 
 See [ROADMAP.md](./ROADMAP.md) for the full technical breakdown of each phase, the crates each module depends on, and open architectural risks.
 

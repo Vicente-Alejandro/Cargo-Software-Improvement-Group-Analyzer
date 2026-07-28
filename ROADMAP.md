@@ -26,12 +26,12 @@
 - [x] **Data-Oriented Metrics:** Store extracted metrics in contiguous flat arrays for fast aggregation.
 
 ## v0.3.0 — Scoring & Concurrency
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **1-7 Star Scoring Engine:** Implement the math in `scoring/mod.rs` to map Volume/Complexity metrics to the 1-7 star scale.
-- [ ] **Cyclomatic Complexity (SIG Rule 2):** Analyze AST branches (`if`, `match`, `while`, `for`) to flag units with complexity > 5.
-- [ ] **Parallel Processing:** Implement parallel AST parsing across multiple files using `rayon`.
-- [ ] **CI/CD Quality Gate:** Implement the logic for `--fail-below <1-7>` flag to fail the process.
+- [x] **1-7 Star Scoring Engine:** Implement the math in `scoring/mod.rs` to map Volume/Complexity metrics to the 1-7 star scale.
+- [x] **Cyclomatic Complexity (SIG Rule 2):** Analyze AST branches (`if`, `match`, `while`, `for`) to flag units with complexity > 5.
+- [x] **Parallel Processing:** Implement parallel AST parsing across multiple files using `rayon`.
+- [x] **CI/CD Quality Gate:** Implement the logic for `--fail-below <1-7>` flag to fail the process.
 
 ## v0.4.0 — Hotspots (Churn vs. Coverage)
 **Status:** Planned
