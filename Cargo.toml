@@ -1,6 +1,6 @@
 [package]
 name = "cargo-sig"
-version = "0.4.2"
+version = "0.5.0"
 rust-version = "1.85"
 edition = "2024"
 description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."

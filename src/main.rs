@@ -20,12 +20,20 @@ fn main() -> anyhow::Result<()> {
 
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
+    let mut files = metrics
+        .iter()
+        .map(|m| m.file_path.clone())
+        .collect::<Vec<_>>();
+    files.sort();
+    files.dedup();
+    let dup_pct = duplication::calculate_duplication(&files);
+
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
 
     let cov = coverage::read_lcov(&dir);
-    let score = scoring::evaluate(&metrics);
+    let score = scoring::evaluate(&metrics, dup_pct);
 
-    print_all(&metrics, &churns, &cov, &score);
+    print_all(&metrics, &churns, &cov, &score, dup_pct);
     enforce_gate(score.stars, args.fail_below);
     Ok(())
 }
@@ -35,8 +43,9 @@ fn print_all(
     ch: &HashMap<PathBuf, usize>,
     cov: &Option<HashMap<PathBuf, Coverage>>,
     s: &Score,
+    dup_pct: f32,
 ) {
-    print_summary(m);
+    print_summary(m, dup_pct);
     print_balance(m);
     print_hotspots(m, ch, cov);
     print_profile(s);
@@ -50,7 +59,7 @@ fn parse_args() -> SigArgs {
     SigArgs::parse(args.into_iter())
 }
 
-fn print_summary(metrics: &[FunctionMetric]) {
+fn print_summary(metrics: &[FunctionMetric], dup: f32) {
     let (mut loc, mut prm, mut cmp) = (0, 0, 0);
     for m in metrics {
         if m.lines_of_code > 15 {
@@ -63,15 +72,22 @@ fn print_summary(metrics: &[FunctionMetric]) {
             cmp += 1;
         }
     }
-    print_stats(metrics.len(), loc, prm, cmp);
+    print_stats(metrics.len(), loc, prm, cmp, dup);
 }
 
-fn print_stats(tot: usize, loc: usize, prm: usize, cmp: usize) {
+fn print_stats(tot: usize, loc: usize, prm: usize, cmp: usize, dup: f32) {
     println!("\n{}", "Summary:".bold());
     println!("Total Functions: {}", tot);
     println!("Volume > 15 lines: {}", color(loc));
     println!("Interface > 4 params: {}", color(prm));
     println!("Complexity > 5 branches: {}", color(cmp));
+
+    let d_col = if dup > 5.0 {
+        format!("{:.1}%", dup).red().to_string()
+    } else {
+        format!("{:.1}%", dup).green().to_string()
+    };
+    println!("Code Duplication: {}", d_col);
 }
 
 fn color(val: usize) -> String {
