@@ -12,6 +12,7 @@ pub struct FunctionMetric {
     pub cyclomatic_complexity: usize,
 }
 
+#[derive(Default)]
 pub struct VolumeEngine {}
 
 struct Ctx<'a> {

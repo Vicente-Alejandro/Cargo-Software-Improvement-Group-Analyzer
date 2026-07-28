@@ -66,15 +66,11 @@ An audit of `scoring/mod.rs` confirmed that `categorize_risk()` only factors in 
 This release is deliberately scoped to correctness only — no new features — so it can be reviewed and shipped as an atomic fix ahead of anything else in the v0.6 series.
 
 ## v0.6.1 — Module Coupling & Cohesion Engine (SIG Guidelines 5-6)
-**Status:** Planned
+**Status:** Completed
 
-The flagship feature of the v0.6 series: today every analysis operates at the unit (function) or file level. Nothing yet examines how modules relate to each other.
-
-- [ ] **Dependency graph:** extend the existing `tree-sitter` AST walker to traverse `mod` declarations and `use` paths and build a module-level dependency graph.
-- [ ] **Fan-in / fan-out:** compute, per module, how many modules it depends on and how many depend on it.
-- [ ] **Circular dependency detection:** flag any cycle in the module graph. A binary signal — no threshold calibration required, unlike Guidelines 1 or 4.
-- [ ] **Zero-bloat graph:** implement the graph with a hand-rolled `HashMap<ModuleId, HashSet<ModuleId>>` — no `petgraph`, consistent with every dependency decision made since v0.1.0.
-- [ ] **Scoring integration:** wire coupling/cohesion into the star math as part of *this same release* — applying the lesson from v0.6.0 instead of deferring integration to a later patch.
+- [x] Analyze `use` declarations (Fan-In / Fan-Out).
+- [x] Detect circular dependencies natively.
+- [x] Integrate Coupling limits into the 1-7 scoring formula.
 
 ## v0.6.2 — Structured Output (`--format json`)
 **Status:** Planned

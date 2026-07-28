@@ -3,7 +3,7 @@ use crate::coverage::Coverage;
 use crate::scoring::Score;
 use owo_colors::OwoColorize;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct AnalysisResult<'a> {
     pub metrics: &'a [FunctionMetric],
@@ -11,197 +11,122 @@ pub struct AnalysisResult<'a> {
     pub cov: &'a Option<HashMap<PathBuf, Coverage>>,
     pub score: &'a Score,
     pub dup_pct: f32,
-}
-
-pub fn print_all(res: &AnalysisResult) {
-    print_summary(res.metrics, res.dup_pct);
-    print_balance(res.metrics);
-    print_hotspots(res.metrics, res.churns, res.cov);
-    print_profile(res.score);
-}
-
-fn print_summary(metrics: &[FunctionMetric], dup: f32) {
-    let (mut loc, mut prm, mut cmp) = (0, 0, 0);
-    for m in metrics {
-        if m.lines_of_code > 15 {
-            loc += 1;
-        }
-        if m.parameter_count > 4 {
-            prm += 1;
-        }
-        if m.cyclomatic_complexity > 5 {
-            cmp += 1;
-        }
-    }
-    print_stats(metrics.len(), [loc, prm, cmp], dup);
-}
-
-fn print_stats(tot: usize, bad: [usize; 3], dup: f32) {
-    println!("\n{}", "Summary:".bold());
-    println!("Total Functions: {}", tot);
-    println!("Volume > 15 lines: {}", color(bad[0]));
-    println!("Interface > 4 params: {}", color(bad[1]));
-    println!("Complexity > 5 branches: {}", color(bad[2]));
-
-    let d_col = if dup > 5.0 {
-        format!("{:.1}%", dup).red().to_string()
-    } else {
-        format!("{:.1}%", dup).green().to_string()
-    };
-    println!("Code Duplication: {}", d_col);
-}
-
-fn color(val: usize) -> String {
-    if val > 0 {
-        val.red().to_string()
-    } else {
-        val.green().to_string()
-    }
-}
-
-fn compute_balance(metrics: &[FunctionMetric]) -> (HashMap<PathBuf, usize>, usize) {
-    let mut d = HashMap::new();
-    let mut tot = 0;
-    for m in metrics {
-        let p = m.file_path.parent().unwrap_or(Path::new("")).to_path_buf();
-        *d.entry(p).or_insert(0) += m.lines_of_code;
-        tot += m.lines_of_code;
-    }
-    (d, tot)
-}
-
-pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
-    let (d, tot) = compute_balance(metrics);
-    !d.values()
-        .any(|&loc| (loc as f32 / tot as f32) * 100.0 > 50.0)
-}
-
-pub fn print_balance(metrics: &[FunctionMetric]) -> bool {
-    println!("\n{}", "Component Balance:".bold());
-    let (d, tot) = compute_balance(metrics);
-    check_balance(d, tot)
-}
-
-fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) -> bool {
-    let mut ok = true;
-    for (d, loc) in dirs {
-        let pct = (loc as f32 / tot as f32) * 100.0;
-        if pct > 50.0 {
-            print_imbalance(&d, pct);
-            ok = false;
-        }
-    }
-    if ok {
-        println!("  {} All components are balanced.", "✅".green());
-    }
-    ok
-}
-
-fn print_imbalance(d: &Path, pct: f32) {
-    let n = d.file_name().unwrap_or_default().to_string_lossy();
-    println!(
-        "  {} {} contains {:.1}% of total code.",
-        "⚠️".yellow(),
-        n.bold(),
-        pct
-    );
+    pub graph: &'a crate::coupling::CouplingGraph,
 }
 
 #[rustfmt::skip]
-fn print_hotspots(m: &[FunctionMetric], ch: &HashMap<PathBuf, usize>, cov: &Option<HashMap<PathBuf, Coverage>>) {
-    let mut h = match_hotspots(&compute_file_risk(m), ch, cov);
-    if h.is_empty() {
-        println!("  {} No Hotspots.", "✅ [OK]".green());
-        return;
-    }
-    h.sort_by_key(|b| std::cmp::Reverse(b.1 * b.2));
-    println!("\n{} {}", "⚠️".yellow(), "Hotspots (Risk + Churn):".bold().yellow());
-    for (i, (p, r, c, cv)) in h.iter().take(5).enumerate() {
-        print_hotspot_item(i, (p, *r, *c, *cv));
-    }
+pub fn print_all(res: &AnalysisResult) {
+    print_summary(res);
+    print_balance(res.metrics);
+    print_coupling(res);
+    print_hotspots(res);
+    print_profile(res.score);
 }
 
-fn print_hotspot_item(i: usize, item: (&Path, usize, usize, Option<f32>)) {
-    let (p, r, c, cv) = item;
-    let n = p.file_name().unwrap_or_default().to_string_lossy();
-    let c_str = cv
-        .map(|v| format!("{:.0}% cov", v))
-        .unwrap_or_else(|| "no cov data".to_string());
-    println!(
-        "  {}. {} ({} com, {} r_loc, {})",
-        i + 1,
-        n.red(),
-        c,
-        r,
-        c_str
-    );
+#[rustfmt::skip]
+fn print_summary(res: &AnalysisResult) {
+    println!("\n{}", "Summary:".bold());
+    println!("Total Functions: {}", res.metrics.len());
+    let (mut v, mut i, mut c) = (0, 0, 0);
+    for m in res.metrics {
+        if m.lines_of_code > 15 { v += 1; }
+        if m.parameter_count > 4 { i += 1; }
+        if m.cyclomatic_complexity > 5 { c += 1; }
+    }
+    println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%", v, i, c, res.dup_pct);
 }
 
+#[rustfmt::skip]
+pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
+    let (mut comp_loc, mut total_loc) = (HashMap::new(), 0);
+    for m in metrics {
+        if let Some(p) = m.file_path.parent() {
+            let comp = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+            *comp_loc.entry(comp).or_insert(0) += m.lines_of_code;
+            total_loc += m.lines_of_code;
+        }
+    }
+    if total_loc == 0 { return true; }
+    !comp_loc.values().any(|&loc| (loc as f32 / total_loc as f32) > 0.5)
+}
+
+#[rustfmt::skip]
+fn print_balance(metrics: &[FunctionMetric]) {
+    println!("\n{}", "Component Balance:".bold());
+    if is_balanced(metrics) { println!("  All components are balanced. ... {}", "✅".green()); }
+    else { println!("  One component exceeds 50% of the codebase. ... {}", "⚠️".yellow()); }
+}
+
+#[rustfmt::skip]
+fn print_coupling(res: &AnalysisResult) {
+    println!("\n{}", "Module Coupling:".bold());
+    if res.graph.ignored_externals > 0 { println!("  {} external dependencies ignored. ... {}", res.graph.ignored_externals, "ℹ️".blue()); }
+    let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
+    if h_fan > 0 { println!("  Fan-Out > 5: {} modules ... {}", h_fan, "⚠️".yellow()); }
+    else { println!("  Fan-Out is healthy across all modules. ... {}", "✅".green()); }
+    let cycles = res.graph.detect_cycles();
+    if !cycles.is_empty() {
+        println!("  Circular Dependencies: {} DETECTED! ... {}", cycles.len(), "🚨".red());
+        let path: Vec<_> = cycles[0].iter().map(|p| p.file_name().unwrap_or_default().to_string_lossy()).collect();
+        println!("     Example: {} -> {}", path.join(" -> "), path[0]);
+    } else { println!("  No Circular Dependencies. ... {}", "✅".green()); }
+}
+
+#[rustfmt::skip]
 fn compute_file_risk(metrics: &[FunctionMetric]) -> HashMap<PathBuf, usize> {
     let mut f_risk = HashMap::new();
+    let g = crate::coupling::CouplingGraph::default();
     for m in metrics {
-        if m.lines_of_code > 30 || m.cyclomatic_complexity > 10 {
-            let key = m
-                .file_path
-                .canonicalize()
-                .unwrap_or_else(|_| m.file_path.clone());
-            *f_risk.entry(key).or_insert(0) += m.lines_of_code;
-        }
+        let r = crate::scoring::categorize_risk(m, &g) as usize;
+        *f_risk.entry(m.file_path.clone()).or_insert(0) += r;
     }
     f_risk
 }
 
-fn match_hotspots(
-    f_risk: &HashMap<PathBuf, usize>,
-    ch: &HashMap<PathBuf, usize>,
-    cov: &Option<HashMap<PathBuf, Coverage>>,
-) -> Vec<(PathBuf, usize, usize, Option<f32>)> {
-    let mut hotspots = Vec::new();
-    for (path, &risk_loc) in f_risk {
-        let commits = ch.get(path).copied().unwrap_or(0);
-        let cv = cov.as_ref().and_then(|c| c.get(path)).map(|c| c.percent());
-        if commits > 1 {
-            hotspots.push((path.clone(), risk_loc, commits, cv));
-        }
+#[rustfmt::skip]
+pub fn print_hotspots(res: &AnalysisResult) {
+    let fr = compute_file_risk(res.metrics);
+    let mut s: Vec<_> = fr.keys().collect();
+    s.sort_by_key(|k| -( (fr.get(*k).unwrap_or(&0) * res.churns.get(*k).unwrap_or(&0)) as isize ));
+    s.retain(|k| *fr.get(*k).unwrap_or(&0) > 0 && *res.churns.get(*k).unwrap_or(&0) > 0);
+    if s.is_empty() { return; }
+    println!("\n{} {}", "Hotspots (Risk + Churn):".bold().yellow(), "⚠️".yellow());
+    for (i, p) in s.iter().take(5).enumerate() {
+        print_hotspot_item(i, p, &fr, res);
     }
-    hotspots
 }
 
-fn print_profile(score: &Score) {
+#[rustfmt::skip]
+fn print_hotspot_item(i: usize, p: &PathBuf, fr: &HashMap<PathBuf, usize>, res: &AnalysisResult) {
+    let (cwd, r, c) = (std::env::current_dir().unwrap_or_default(), fr.get(p).unwrap_or(&0), res.churns.get(p).unwrap_or(&0));
+    let name = p.strip_prefix(&cwd).unwrap_or(p).display();
+    let cv_str = if let Some(cv) = res.cov {
+        if let Some(c) = cv.get(p) { format!("Coverage: {:.1}%", c.percent()) } else { "Coverage: N/A".to_string() }
+    } else { "Coverage: N/A".to_string() };
+    println!("  {}. {} (High Risk: {} points, High Churn: {} commits, {})", i + 1, name, r, c, cv_str);
+}
+
+#[rustfmt::skip]
+fn print_profile(s: &Score) {
     println!("\n{}", "Risk Profile:".bold());
-    println!("Moderate Risk: {:.1}%", score.pct_moderate.yellow());
-    println!("High Risk: {:.1}%", score.pct_high.bright_red());
-    println!("Very High Risk: {:.1}%", score.pct_very_high.red().bold());
+    println!("Moderate Risk: {:.1}%\nHigh Risk: {:.1}%\nVery High Risk: {:.1}%", s.pct_moderate, s.pct_high, s.pct_very_high);
     println!("\n─────────────────────────────────────");
-    let c = format_stars(score.stars);
-    println!("Maintainability Rating: {} ({} / 7)", c, score.stars);
+    let stars_str = format!("{} ({:^1} / 7)", star_string(s.stars), s.stars);
+    let colored_stars = match s.stars {
+        6..=7 => stars_str.green().to_string(),
+        4..=5 => stars_str.yellow().to_string(),
+        _ => stars_str.red().to_string(),
+    };
+    println!("{}: {}", "Maintainability Rating".bold(), colored_stars);
 }
 
-fn format_stars(stars: u8) -> String {
-    let s = "★".repeat(stars as usize) + &"☆".repeat((7 - stars) as usize);
-    match stars {
-        7 | 6 => s.green().bold().to_string(),
-        5 | 4 => s.yellow().bold().to_string(),
-        _ => s.red().bold().to_string(),
-    }
+fn star_string(stars: u8) -> String {
+    format!("{}{}", "★".repeat(stars as usize), "☆".repeat((7 - stars) as usize))
 }
 
-pub fn enforce_gate(stars: u8, gate: u8) {
-    if gate == 0 {
-        return;
+pub fn enforce_gate(stars: u8, fail_below: u8) {
+    if stars < fail_below {
+        eprintln!("\n{} Rating {} is below the required {}", "ERROR:".red().bold(), stars, fail_below);
+        std::process::exit(1);
     }
-    if stars < gate {
-        gate_fail(stars, gate);
-    }
-    println!("\n{} Passed gate.", "✅ [OK]".green().bold());
-}
-
-fn gate_fail(stars: u8, gate: u8) {
-    println!(
-        "\n{} Rating {} below gate {}.",
-        "❌ [ERROR]".red().bold(),
-        stars,
-        gate
-    );
-    std::process::exit(1);
 }

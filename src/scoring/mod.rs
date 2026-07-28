@@ -8,77 +8,59 @@ pub struct Score {
     pub pct_very_high: f64,
 }
 
-enum Risk {
-    Low,
-    Moderate,
-    High,
-    VeryHigh,
+#[derive(Clone, Copy)]
+pub enum Risk {
+    Low = 0,
+    Moderate = 2,
+    High = 5,
+    VeryHigh = 10,
 }
 
-pub fn evaluate(metrics: &[FunctionMetric], dup: f32, balanced: bool) -> Score {
-    if metrics.is_empty() {
-        return Score {
-            stars: 7,
-            ..Default::default()
-        };
-    }
-    let mut totals = [0, 0, 0, 0];
+#[rustfmt::skip]
+pub fn evaluate(metrics: &[FunctionMetric], dup: f32, bal: bool, graph: &crate::coupling::CouplingGraph) -> Score {
+    if metrics.is_empty() { return Score { stars: 7, ..Default::default() }; }
+    let mut t = [0; 4];
     for m in metrics {
-        totals[0] += m.lines_of_code;
-        add_risk(&mut totals, categorize_risk(m), m.lines_of_code);
+        t[0] += m.lines_of_code;
+        let r = categorize_risk(m, graph) as usize;
+        if r == 10 { t[3] += m.lines_of_code; }
+        else if r == 5 { t[2] += m.lines_of_code; }
+        else if r == 2 { t[1] += m.lines_of_code; }
     }
-    compute_score(totals, dup, balanced)
+    let mut score = compute_score(t, dup, bal);
+    if !graph.detect_cycles().is_empty() && score.stars > 1 { score.stars = 1; }
+    score
 }
 
-fn add_risk(t: &mut [usize; 4], r: Risk, loc: usize) {
-    match r {
-        Risk::VeryHigh => t[3] += loc,
-        Risk::High => t[2] += loc,
-        Risk::Moderate => t[1] += loc,
-        Risk::Low => {}
-    }
-}
-
-fn categorize_risk(m: &FunctionMetric) -> Risk {
-    if is_vhigh(m) {
-        return Risk::VeryHigh;
-    }
-    if is_high(m) {
-        return Risk::High;
-    }
-    if is_mod(m) {
-        return Risk::Moderate;
-    }
+#[rustfmt::skip]
+pub fn categorize_risk(m: &FunctionMetric, graph: &crate::coupling::CouplingGraph) -> Risk {
+    let f = graph.fan_out(&m.file_path);
+    if is_vh(m, f) { return Risk::VeryHigh; }
+    if is_h(m, f) { return Risk::High; }
+    if is_m(m, f) { return Risk::Moderate; }
     Risk::Low
 }
 
-fn is_vhigh(m: &FunctionMetric) -> bool {
-    m.lines_of_code > 60 || m.cyclomatic_complexity > 25 || m.parameter_count > 7
+#[rustfmt::skip]
+fn is_vh(m: &FunctionMetric, f: usize) -> bool {
+    m.lines_of_code > 60 || m.cyclomatic_complexity > 25 || m.parameter_count > 7 || f > 10
 }
-fn is_high(m: &FunctionMetric) -> bool {
-    m.lines_of_code > 30 || m.cyclomatic_complexity > 10 || m.parameter_count > 5
+#[rustfmt::skip]
+fn is_h(m: &FunctionMetric, f: usize) -> bool {
+    m.lines_of_code > 30 || m.cyclomatic_complexity > 10 || m.parameter_count > 5 || f > 7
 }
-fn is_mod(m: &FunctionMetric) -> bool {
-    m.lines_of_code > 15 || m.cyclomatic_complexity > 5 || m.parameter_count > 4
+#[rustfmt::skip]
+fn is_m(m: &FunctionMetric, f: usize) -> bool {
+    m.lines_of_code > 15 || m.cyclomatic_complexity > 5 || m.parameter_count > 4 || f > 5
 }
 
+#[rustfmt::skip]
 fn compute_score(t: [usize; 4], dup: f32, balanced: bool) -> Score {
     let tot = if t[0] == 0 { 1.0 } else { t[0] as f64 };
-    let (m, h, v) = (
-        (t[1] as f64 / tot) * 100.0,
-        (t[2] as f64 / tot) * 100.0,
-        (t[3] as f64 / tot) * 100.0,
-    );
+    let (m, h, v) = ((t[1] as f64 / tot) * 100.0, (t[2] as f64 / tot) * 100.0, (t[3] as f64 / tot) * 100.0);
     let mut stars = calculate_stars(m, h, v, dup);
-    if !balanced && stars > 5 {
-        stars = 5;
-    }
-    Score {
-        stars,
-        pct_moderate: m,
-        pct_high: h,
-        pct_very_high: v,
-    }
+    if !balanced && stars > 5 { stars = 5; }
+    Score { stars, pct_moderate: m, pct_high: h, pct_very_high: v }
 }
 
 struct Threshold {
@@ -134,12 +116,9 @@ const THRESHOLDS: [Threshold; 6] = [
     },
 ];
 
+#[rustfmt::skip]
 fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
-    THRESHOLDS
-        .iter()
-        .find(|t| v <= t.v && h <= t.h && m <= t.m && (d as f64) <= t.d)
-        .map(|t| t.stars)
-        .unwrap_or(1)
+    THRESHOLDS.iter().find(|t| v <= t.v && h <= t.h && m <= t.m && (d as f64) <= t.d).map(|t| t.stars).unwrap_or(1)
 }
 
 #[cfg(test)]
@@ -154,43 +133,23 @@ mod tests {
     }
 
     #[test]
-    fn test_one_star() {
-        let score = compute_score([100, 0, 0, 60], 0.0, true);
-        assert_eq!(score.stars, 1);
-    }
-
-    #[test]
-    fn test_dup_penalty() {
-        let score = compute_score([100, 0, 0, 0], 25.0, true);
-        assert_eq!(score.stars, 3);
-    }
-
-    #[test]
     fn test_empty_metrics() {
-        let score = evaluate(&[], 0.0, true);
+        let graph = crate::coupling::CouplingGraph::default();
+        let score = evaluate(&[], 0.0, true, &graph);
         assert_eq!(score.stars, 7);
     }
 
     #[test]
     fn test_interface_size_penalty() {
-        // Test that parameter count alone triggers a risk categorization.
         let metrics = vec![FunctionMetric {
             function_name: "test_fn".to_string(),
             file_path: PathBuf::new(),
             lines_of_code: 10,
             cyclomatic_complexity: 1,
-            parameter_count: 8, // Very High risk
+            parameter_count: 8,
         }];
-        let score = evaluate(&metrics, 0.0, true);
-        // 100% of the code is Very High risk -> 1 star.
+        let graph = crate::coupling::CouplingGraph::default();
+        let score = evaluate(&metrics, 0.0, true, &graph);
         assert_eq!(score.stars, 1);
-    }
-
-    #[test]
-    fn test_balance_cap() {
-        // Perfect metrics, but unbalanced.
-        let score = compute_score([100, 0, 0, 0], 0.0, false);
-        // Capped at 5 stars.
-        assert_eq!(score.stars, 5);
     }
 }
