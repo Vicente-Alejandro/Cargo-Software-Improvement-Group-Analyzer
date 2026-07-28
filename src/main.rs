@@ -138,7 +138,7 @@ fn print_profile(score: &Score) {
     println!("\n{}", "Risk Profile:".bold());
     println!("Moderate Risk: {:.1}%", score.pct_moderate.yellow());
     println!("High Risk: {:.1}%", score.pct_high.bright_red());
-    println!("Very High Risk: {:.1}%", score.pct_very_high.red().on_black());
+    println!("Very High Risk: {:.1}%", score.pct_very_high.red().bold());
     println!("\n─────────────────────────────────────");
     let c = format_stars(score.stars);
     println!("Maintainability Rating: {} ({} / 7)", c, score.stars);
