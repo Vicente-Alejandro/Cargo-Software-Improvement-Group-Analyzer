@@ -40,6 +40,12 @@
 - [x] **Coverage Ingestion:** Parse `.lcov` directly without `serde_json` to keep zero bloat.
 - [x] **Component Balance:** Aggregate LOC by directory and check if any directory dominates >50%.
 
+## v0.5.0 — Duplication Engine (SIG Rule 3)
+**Status:** Planned
+
+- [ ] **AST Subtree Hashing:** Traverse the `tree-sitter` AST to hash logic blocks and identify identical code clones.
+- [ ] **Duplication Rating:** Measure what percentage of the total codebase is duplicated.
+
 ---
 
 *This document is actively maintained and reflects the current development priorities.*

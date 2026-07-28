@@ -28,16 +28,18 @@ $ cargo sig
 [cargo-sig] Cargo SIG - Running check...
 [cargo-sig] 
 [cargo-sig] Summary:
-[cargo-sig] Total Functions: 38
+[cargo-sig] Total Functions: 53
 [cargo-sig] Volume > 15 lines: 0
-[cargo-sig] Interface > 4 params: 1
+[cargo-sig] Interface > 4 params: 3
 [cargo-sig] Complexity > 5 branches: 1
 [cargo-sig] 
-[cargo-sig] ⚠️ Architectural Hotspots (High Risk + High Churn):
-[cargo-sig]   1. main.rs (9 commits, 45 risk LOC)
+[cargo-sig] Component Balance:
+[cargo-sig]   ✅ All components are balanced.
+[cargo-sig] 
+[cargo-sig] ✅ [OK] No Hotspots.
 [cargo-sig] 
 [cargo-sig] Risk Profile:
-[cargo-sig] Moderate Risk: 4.5%
+[cargo-sig] Moderate Risk: 3.3%
 [cargo-sig] High Risk: 0.0%
 [cargo-sig] Very High Risk: 0.0%
 [cargo-sig] ─────────────────────────────────────
@@ -148,7 +150,8 @@ cargo sig --fail-below 3
 | SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Completed |
 | SIG Guideline 3 — Write Code Once | Duplication percentage | Planned |
 | SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
-| Churn × Coverage | Cross-references `git log` history with bad quality files | Completed |
+| SIG Guideline 9 — Balance Components | Checks if any module dominates >50% of the codebase | Completed |
+| Churn × Coverage | Cross-references `git log` and `coverage.lcov` with bad quality files | Completed |
 | Scoring Engine | Normalizes all of the above into a 1–7 star rating | Completed |
 
 See [ROADMAP.md](./ROADMAP.md) for the full technical breakdown of each phase, the crates each module depends on, and open architectural risks.
