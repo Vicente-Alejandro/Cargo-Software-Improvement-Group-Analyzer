@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.4.2` — pre-release, not yet published to crates.io.
+**Current version:** `0.5.0` — pre-release, not yet published to crates.io.
 
 </div>
 
@@ -28,10 +28,11 @@ $ cargo sig
 [cargo-sig] Cargo SIG - Running check...
 [cargo-sig] 
 [cargo-sig] Summary:
-[cargo-sig] Total Functions: 53
+[cargo-sig] Total Functions: 59
 [cargo-sig] Volume > 15 lines: 0
-[cargo-sig] Interface > 4 params: 3
-[cargo-sig] Complexity > 5 branches: 1
+[cargo-sig] Interface > 4 params: 5
+[cargo-sig] Complexity > 5 branches: 2
+[cargo-sig] Code Duplication: 1.8%
 [cargo-sig] 
 [cargo-sig] Component Balance:
 [cargo-sig]   ✅ All components are balanced.
@@ -163,7 +164,7 @@ If the `coverage.lcov` file is present in the root directory, the Hotspots matri
 |---|---|---|
 | SIG Guideline 1 — Short Units | Flags units longer than 15 lines of code | Completed |
 | SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Completed |
-| SIG Guideline 3 — Write Code Once | Duplication percentage | Planned |
+| SIG Guideline 3 — Write Code Once | Duplication percentage | Completed |
 | SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
 | SIG Guideline 9 — Balance Components | Checks if any module dominates >50% of the codebase | Completed |
 | Churn × Coverage | Cross-references `git log` and `coverage.lcov` with bad quality files | Completed |

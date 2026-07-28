@@ -41,10 +41,10 @@
 - [x] **Component Balance:** Aggregate LOC by directory and check if any directory dominates >50%.
 
 ## v0.5.0 — Duplication Engine (SIG Rule 3)
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **AST Subtree Hashing:** Traverse the `tree-sitter` AST to hash logic blocks and identify identical code clones.
-- [ ] **Duplication Rating:** Measure what percentage of the total codebase is duplicated.
+- [x] **AST Subtree Hashing:** Traverse the `tree-sitter` AST to hash logic blocks and identify identical code clones.
+- [x] **Duplication Rating:** Measure what percentage of the total codebase is duplicated.
 
 ---
 
