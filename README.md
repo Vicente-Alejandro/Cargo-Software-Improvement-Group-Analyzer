@@ -103,8 +103,8 @@ cargo install cargo-sig
 **From source:**
 
 ```bash
-git clone https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer-.git
-cd Cargo-SIG-Software-Improvement-Group-Analyzer-
+git clone https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer.git
+cd Cargo-Software-Improvement-Group-Analyzer
 cargo install --path .
 ```
 
