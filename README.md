@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.5.0` — pre-release, not yet published to crates.io.
+**Current version:** `0.5.1` — pre-release, not yet published to crates.io.
 
 </div>
 
@@ -28,9 +28,9 @@ $ cargo sig
 [cargo-sig] Cargo SIG - Running check...
 [cargo-sig] 
 [cargo-sig] Summary:
-[cargo-sig] Total Functions: 59
-[cargo-sig] Volume > 15 lines: 0
-[cargo-sig] Interface > 4 params: 5
+[cargo-sig] Total Functions: 60
+[cargo-sig] Volume > 15 lines: 1
+[cargo-sig] Interface > 4 params: 4
 [cargo-sig] Complexity > 5 branches: 2
 [cargo-sig] Code Duplication: 1.8%
 [cargo-sig] 
@@ -40,7 +40,7 @@ $ cargo sig
 [cargo-sig] ✅ [OK] No Hotspots.
 [cargo-sig] 
 [cargo-sig] Risk Profile:
-[cargo-sig] Moderate Risk: 3.3%
+[cargo-sig] Moderate Risk: 8.9%
 [cargo-sig] High Risk: 0.0%
 [cargo-sig] Very High Risk: 0.0%
 [cargo-sig] ─────────────────────────────────────
