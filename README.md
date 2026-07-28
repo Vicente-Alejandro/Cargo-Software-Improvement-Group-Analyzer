@@ -140,6 +140,21 @@ Example — using it as a CI quality gate:
 cargo sig --fail-below 3
 ```
 
+### Advanced: Coverage Ingestion
+
+`cargo-sig` can cross-reference your architectural hotspots with your test coverage. It does not run your tests itself (to remain ultra-fast). Instead, it reads a `coverage.lcov` file if you generate one.
+
+1. Generate the coverage file using a tool like `cargo-llvm-cov`:
+   ```bash
+   cargo llvm-cov --lcov --output-path coverage.lcov
+   ```
+2. Run `cargo-sig`:
+   ```bash
+   cargo sig
+   ```
+
+If the `coverage.lcov` file is present in the root directory, the Hotspots matrix will automatically display the test coverage percentage for your most dangerous files. If the file is not found, `cargo-sig` degrades gracefully and just prints `no cov data` next to the hotspots.
+
 ---
 
 ## What Gets Measured
