@@ -53,23 +53,23 @@ pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
 #[rustfmt::skip]
 fn print_balance(metrics: &[FunctionMetric]) {
     println!("\n{}", "Component Balance:".bold());
-    if is_balanced(metrics) { println!("  All components are balanced. ... {}", "✅".green()); }
-    else { println!("  One component exceeds 50% of the codebase. ... {}", "⚠️".yellow()); }
+    if is_balanced(metrics) { println!("  All components are balanced. {}", "✅".green()); }
+    else { println!("  One component exceeds 50% of the codebase. {}", "⚠️".yellow()); }
 }
 
 #[rustfmt::skip]
 fn print_coupling(res: &AnalysisResult) {
     println!("\n{}", "Module Coupling:".bold());
-    if res.graph.ignored_externals > 0 { println!("  {} external dependencies ignored. ... {}", res.graph.ignored_externals, "ℹ️".blue()); }
+    if res.graph.ignored_externals > 0 { println!("  {} external dependencies ignored. {}", res.graph.ignored_externals, "ℹ️".blue()); }
     let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
-    if h_fan > 0 { println!("  Fan-Out > 5: {} modules ... {}", h_fan, "⚠️".yellow()); }
-    else { println!("  Fan-Out is healthy across all modules. ... {}", "✅".green()); }
+    if h_fan > 0 { println!("  Fan-Out > 5: {} modules {}", h_fan, "⚠️".yellow()); }
+    else { println!("  Fan-Out is healthy across all modules. {}", "✅".green()); }
     let cycles = res.graph.detect_cycles();
     if !cycles.is_empty() {
-        println!("  Circular Dependencies: {} DETECTED! ... {}", cycles.len(), "🚨".red());
+        println!("  Circular Dependencies: {} DETECTED! {}", cycles.len(), "🚨".red());
         let path: Vec<_> = cycles[0].iter().map(|p| p.file_name().unwrap_or_default().to_string_lossy()).collect();
         println!("     Example: {} -> {}", path.join(" -> "), path[0]);
-    } else { println!("  No Circular Dependencies. ... {}", "✅".green()); }
+    } else { println!("  No Circular Dependencies. {}", "✅".green()); }
 }
 
 #[rustfmt::skip]
