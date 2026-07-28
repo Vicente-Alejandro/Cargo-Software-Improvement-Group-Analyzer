@@ -4,3 +4,4 @@ work.md
 # cargo-qc logs
 tools/cargo-qc/
 tree.txt
+coverage.lcov

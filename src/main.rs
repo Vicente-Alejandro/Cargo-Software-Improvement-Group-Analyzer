@@ -1,57 +1,54 @@
-mod analysis;
-mod churn;
 mod cli;
-mod coverage;
+mod analysis;
 mod duplication;
-mod report;
+mod churn;
+mod coverage;
 mod scoring;
+mod report;
 
-use analysis::FunctionMetric;
 use cli::SigArgs;
+use analysis::FunctionMetric;
 use coverage::Coverage;
-use owo_colors::OwoColorize;
 use scoring::Score;
+use owo_colors::OwoColorize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 fn main() -> anyhow::Result<()> {
     let args = parse_args();
     println!("{} - Running check...", "Cargo SIG".bold().cyan());
-
+    
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
+    
     let cov = coverage::read_lcov(&dir);
     let score = scoring::evaluate(&metrics);
 
-    print_summary(&metrics);
-    print_balance(&metrics);
-    print_hotspots(&metrics, &churns, &cov);
-    print_profile(&score);
+    print_all(&metrics, &churns, &cov, &score);
     enforce_gate(score.stars, args.fail_below);
     Ok(())
 }
 
+fn print_all(m: &[FunctionMetric], ch: &HashMap<PathBuf, usize>, cov: &Option<HashMap<PathBuf, Coverage>>, s: &Score) {
+    print_summary(m);
+    print_balance(m);
+    print_hotspots(m, ch, cov);
+    print_profile(s);
+}
+
 fn parse_args() -> SigArgs {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
-    if !args.is_empty() && args[0] == "sig" {
-        args.remove(0);
-    }
+    if !args.is_empty() && args[0] == "sig" { args.remove(0); }
     SigArgs::parse(args.into_iter())
 }
 
 fn print_summary(metrics: &[FunctionMetric]) {
     let (mut loc, mut prm, mut cmp) = (0, 0, 0);
     for m in metrics {
-        if m.lines_of_code > 15 {
-            loc += 1;
-        }
-        if m.parameter_count > 4 {
-            prm += 1;
-        }
-        if m.cyclomatic_complexity > 5 {
-            cmp += 1;
-        }
+        if m.lines_of_code > 15 { loc += 1; }
+        if m.parameter_count > 4 { prm += 1; }
+        if m.cyclomatic_complexity > 5 { cmp += 1; }
     }
     print_stats(metrics.len(), loc, prm, cmp);
 }
@@ -65,11 +62,7 @@ fn print_stats(tot: usize, loc: usize, prm: usize, cmp: usize) {
 }
 
 fn color(val: usize) -> String {
-    if val > 0 {
-        val.red().to_string()
-    } else {
-        val.green().to_string()
-    }
+    if val > 0 { val.red().to_string() } else { val.green().to_string() }
 }
 
 fn print_balance(metrics: &[FunctionMetric]) {
@@ -89,26 +82,19 @@ fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) {
     for (d, loc) in dirs {
         let pct = (loc as f32 / tot as f32) * 100.0;
         if pct > 50.0 {
-            let n = d.file_name().unwrap_or_default().to_string_lossy();
-            println!(
-                "  {} {} contains {:.1}% of total code.",
-                "⚠️".yellow(),
-                n.bold(),
-                pct
-            );
+            print_imbalance(&d, pct);
             ok = false;
         }
     }
-    if ok {
-        println!("  {} All components are balanced.", "✅".green());
-    }
+    if ok { println!("  {} All components are balanced.", "✅".green()); }
 }
 
-fn print_hotspots(
-    m: &[FunctionMetric],
-    ch: &HashMap<PathBuf, usize>,
-    cov: &Option<HashMap<PathBuf, Coverage>>,
-) {
+fn print_imbalance(d: &PathBuf, pct: f32) {
+    let n = d.file_name().unwrap_or_default().to_string_lossy();
+    println!("  {} {} contains {:.1}% of total code.", "⚠️".yellow(), n.bold(), pct);
+}
+
+fn print_hotspots(m: &[FunctionMetric], ch: &HashMap<PathBuf, usize>, cov: &Option<HashMap<PathBuf, Coverage>>) {
     let mut h = match_hotspots(&compute_file_risk(m), ch, cov);
     if h.is_empty() {
         println!("\n{} No Hotspots.", "✅ [OK]".green().bold());
@@ -117,47 +103,33 @@ fn print_hotspots(
     h.sort_by(|a, b| (b.1 * b.2).cmp(&(a.1 * a.2)));
     println!("\n{}", "⚠️ Hotspots (Risk + Churn):".bold().yellow());
     for (i, (p, r, c, cv)) in h.iter().take(5).enumerate() {
-        let n = p.file_name().unwrap_or_default().to_string_lossy();
-        let c_str = cv
-            .map(|v| format!("{:.0}% cov", v))
-            .unwrap_or_else(|| "no cov data".to_string());
-        println!(
-            "  {}. {} ({} com, {} r_loc, {})",
-            i + 1,
-            n.red(),
-            c,
-            r,
-            c_str
-        );
+        print_hotspot_item(i, p, *r, *c, *cv);
     }
+}
+
+fn print_hotspot_item(i: usize, p: &PathBuf, r: usize, c: usize, cv: Option<f32>) {
+    let n = p.file_name().unwrap_or_default().to_string_lossy();
+    let c_str = cv.map(|v| format!("{:.0}% cov", v)).unwrap_or_else(|| "no cov data".to_string());
+    println!("  {}. {} ({} com, {} r_loc, {})", i + 1, n.red(), c, r, c_str);
 }
 
 fn compute_file_risk(metrics: &[FunctionMetric]) -> HashMap<PathBuf, usize> {
     let mut f_risk = HashMap::new();
     for m in metrics {
         if m.lines_of_code > 30 || m.cyclomatic_complexity > 10 {
-            let key = m
-                .file_path
-                .canonicalize()
-                .unwrap_or_else(|_| m.file_path.clone());
+            let key = m.file_path.canonicalize().unwrap_or_else(|_| m.file_path.clone());
             *f_risk.entry(key).or_insert(0) += m.lines_of_code;
         }
     }
     f_risk
 }
 
-fn match_hotspots(
-    f_risk: &HashMap<PathBuf, usize>,
-    ch: &HashMap<PathBuf, usize>,
-    cov: &Option<HashMap<PathBuf, Coverage>>,
-) -> Vec<(PathBuf, usize, usize, Option<f32>)> {
+fn match_hotspots(f_risk: &HashMap<PathBuf, usize>, ch: &HashMap<PathBuf, usize>, cov: &Option<HashMap<PathBuf, Coverage>>) -> Vec<(PathBuf, usize, usize, Option<f32>)> {
     let mut hotspots = Vec::new();
     for (path, &risk_loc) in f_risk {
         let commits = ch.get(path).copied().unwrap_or(0);
         let cv = cov.as_ref().and_then(|c| c.get(path)).map(|c| c.percent());
-        if commits > 1 {
-            hotspots.push((path.clone(), risk_loc, commits, cv));
-        }
+        if commits > 1 { hotspots.push((path.clone(), risk_loc, commits, cv)); }
     }
     hotspots
 }
@@ -166,10 +138,7 @@ fn print_profile(score: &Score) {
     println!("\n{}", "Risk Profile:".bold());
     println!("Moderate Risk: {:.1}%", score.pct_moderate.yellow());
     println!("High Risk: {:.1}%", score.pct_high.bright_red());
-    println!(
-        "Very High Risk: {:.1}%",
-        score.pct_very_high.red().on_black()
-    );
+    println!("Very High Risk: {:.1}%", score.pct_very_high.red().on_black());
     println!("\n─────────────────────────────────────");
     let c = format_stars(score.stars);
     println!("Maintainability Rating: {} ({} / 7)", c, score.stars);
@@ -185,21 +154,12 @@ fn format_stars(stars: u8) -> String {
 }
 
 fn enforce_gate(stars: u8, gate: u8) {
-    if gate == 0 {
-        return;
-    }
-    if stars < gate {
-        gate_fail(stars, gate);
-    }
+    if gate == 0 { return; }
+    if stars < gate { gate_fail(stars, gate); }
     println!("\n{} Passed gate.", "✅ [OK]".green().bold());
 }
 
 fn gate_fail(stars: u8, gate: u8) {
-    println!(
-        "\n{} Rating {} below gate {}.",
-        "❌ [ERROR]".red().bold(),
-        stars,
-        gate
-    );
+    println!("\n{} Rating {} below gate {}.", "❌ [ERROR]".red().bold(), stars, gate);
     std::process::exit(1);
 }
