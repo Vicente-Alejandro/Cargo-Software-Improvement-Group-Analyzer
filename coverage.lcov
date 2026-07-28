@@ -1,0 +1,13 @@
+SF:src/main.rs
+DA:1,1
+DA:2,1
+DA:3,1
+DA:4,1
+DA:5,0
+DA:6,0
+end_of_record
+SF:src/coverage/mod.rs
+DA:1,1
+DA:2,1
+DA:3,1
+end_of_record

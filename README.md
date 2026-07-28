@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.4.1` — pre-release, not yet published to crates.io.
+**Current version:** `0.4.2` — pre-release, not yet published to crates.io.
 
 </div>
 

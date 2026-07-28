@@ -8,10 +8,11 @@ mod scoring;
 
 use analysis::FunctionMetric;
 use cli::SigArgs;
+use coverage::Coverage;
 use owo_colors::OwoColorize;
 use scoring::Score;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn main() -> anyhow::Result<()> {
     let args = parse_args();
@@ -20,10 +21,12 @@ fn main() -> anyhow::Result<()> {
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
+    let cov = coverage::read_lcov(&dir);
     let score = scoring::evaluate(&metrics);
 
     print_summary(&metrics);
-    print_hotspots(&metrics, &churns);
+    print_balance(&metrics);
+    print_hotspots(&metrics, &churns, &cov);
     print_profile(&score);
     enforce_gate(score.stars, args.fail_below);
     Ok(())
@@ -69,17 +72,63 @@ fn color(val: usize) -> String {
     }
 }
 
-fn print_hotspots(metrics: &[FunctionMetric], churns: &HashMap<PathBuf, usize>) {
-    let mut h = match_hotspots(&compute_file_risk(metrics), churns);
+fn print_balance(metrics: &[FunctionMetric]) {
+    println!("\n{}", "Component Balance:".bold());
+    let mut d = HashMap::new();
+    let mut tot = 0;
+    for m in metrics {
+        let p = m.file_path.parent().unwrap_or(Path::new("")).to_path_buf();
+        *d.entry(p).or_insert(0) += m.lines_of_code;
+        tot += m.lines_of_code;
+    }
+    check_balance(d, tot);
+}
+
+fn check_balance(dirs: HashMap<PathBuf, usize>, tot: usize) {
+    let mut ok = true;
+    for (d, loc) in dirs {
+        let pct = (loc as f32 / tot as f32) * 100.0;
+        if pct > 50.0 {
+            let n = d.file_name().unwrap_or_default().to_string_lossy();
+            println!(
+                "  {} {} contains {:.1}% of total code.",
+                "⚠️".yellow(),
+                n.bold(),
+                pct
+            );
+            ok = false;
+        }
+    }
+    if ok {
+        println!("  {} All components are balanced.", "✅".green());
+    }
+}
+
+fn print_hotspots(
+    m: &[FunctionMetric],
+    ch: &HashMap<PathBuf, usize>,
+    cov: &Option<HashMap<PathBuf, Coverage>>,
+) {
+    let mut h = match_hotspots(&compute_file_risk(m), ch, cov);
     if h.is_empty() {
         println!("\n{} No Hotspots.", "✅ [OK]".green().bold());
         return;
     }
-    h.sort_by_key(|i| std::cmp::Reverse(i.1 * i.2));
-    println!("\n{}", "⚠️ Hotspots:".bold().yellow());
-    for (i, (p, r, c)) in h.iter().take(5).enumerate() {
+    h.sort_by(|a, b| (b.1 * b.2).cmp(&(a.1 * a.2)));
+    println!("\n{}", "⚠️ Hotspots (Risk + Churn):".bold().yellow());
+    for (i, (p, r, c, cv)) in h.iter().take(5).enumerate() {
         let n = p.file_name().unwrap_or_default().to_string_lossy();
-        println!("  {}. {} ({} commits, {} risk LOC)", i + 1, n.red(), c, r);
+        let c_str = cv
+            .map(|v| format!("{:.0}% cov", v))
+            .unwrap_or_else(|| "no cov data".to_string());
+        println!(
+            "  {}. {} ({} com, {} r_loc, {})",
+            i + 1,
+            n.red(),
+            c,
+            r,
+            c_str
+        );
     }
 }
 
@@ -100,12 +149,14 @@ fn compute_file_risk(metrics: &[FunctionMetric]) -> HashMap<PathBuf, usize> {
 fn match_hotspots(
     f_risk: &HashMap<PathBuf, usize>,
     ch: &HashMap<PathBuf, usize>,
-) -> Vec<(PathBuf, usize, usize)> {
+    cov: &Option<HashMap<PathBuf, Coverage>>,
+) -> Vec<(PathBuf, usize, usize, Option<f32>)> {
     let mut hotspots = Vec::new();
     for (path, &risk_loc) in f_risk {
         let commits = ch.get(path).copied().unwrap_or(0);
+        let cv = cov.as_ref().and_then(|c| c.get(path)).map(|c| c.percent());
         if commits > 1 {
-            hotspots.push((path.clone(), risk_loc, commits));
+            hotspots.push((path.clone(), risk_loc, commits, cv));
         }
     }
     hotspots
