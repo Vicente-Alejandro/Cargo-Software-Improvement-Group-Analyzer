@@ -50,8 +50,12 @@ fn print_summary(metrics: &[FunctionMetric]) {
             cmp += 1;
         }
     }
+    print_stats(metrics.len(), loc, prm, cmp);
+}
+
+fn print_stats(tot: usize, loc: usize, prm: usize, cmp: usize) {
     println!("\n{}", "Summary:".bold());
-    println!("Total Functions: {}", metrics.len());
+    println!("Total Functions: {}", tot);
     println!("Volume > 15 lines: {}", color(loc));
     println!("Interface > 4 params: {}", color(prm));
     println!("Complexity > 5 branches: {}", color(cmp));
@@ -134,18 +138,17 @@ fn enforce_gate(stars: u8, gate: u8) {
         return;
     }
     if stars < gate {
-        println!(
-            "\n{} Rating {} below gate {}.",
-            "❌ [ERROR]".red().bold(),
-            stars,
-            gate
-        );
-        std::process::exit(1);
+        gate_fail(stars, gate);
     }
+    println!("\n{} Passed gate.", "✅ [OK]".green().bold());
+}
+
+fn gate_fail(stars: u8, gate: u8) {
     println!(
-        "\n{} Passed gate ({} >= {}).",
-        "✅ [OK]".green().bold(),
+        "\n{} Rating {} below gate {}.",
+        "❌ [ERROR]".red().bold(),
         stars,
         gate
     );
+    std::process::exit(1);
 }

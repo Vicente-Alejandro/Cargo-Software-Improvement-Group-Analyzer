@@ -45,15 +45,18 @@ impl VolumeEngine {
         c: &str,
         m: &mut Vec<FunctionMetric>,
     ) -> bool {
-        let node = cur.node();
-        let is_func = node.kind() == "function_item";
+        let is_func = cur.node().kind() == "function_item";
         if is_func {
-            let metric = self.extract_metric(node, p, c);
-            if !metric.function_name.starts_with("test_") {
-                m.push(metric);
-            }
+            self.process_func(cur.node(), p, c, m);
         }
         self.advance_cursor(cur, is_func)
+    }
+
+    fn process_func(&self, n: Node, p: &Path, c: &str, m: &mut Vec<FunctionMetric>) {
+        let met = self.extract_metric(n, p, c);
+        if !met.function_name.starts_with("test_") {
+            m.push(met);
+        }
     }
 
     fn advance_cursor(&self, cursor: &mut tree_sitter::TreeCursor, is_func: bool) -> bool {
@@ -73,12 +76,17 @@ impl VolumeEngine {
             params: 0,
             comp: 1,
         };
-        let mut cursor = node.walk();
-        while self.eval_func_node(&mut cursor, node, &mut ctx) {}
+        let mut cur = node.walk();
+        while self.eval_func_node(&mut cur, node, &mut ctx) {}
+        self.build_metric(node, path, &ctx)
+    }
+
+    fn build_metric(&self, node: Node, path: &Path, ctx: &Ctx) -> FunctionMetric {
+        let loc = (node.end_position().row - node.start_position().row) + 1;
         FunctionMetric {
             file_path: path.to_path_buf(),
-            function_name: ctx.name,
-            lines_of_code: (node.end_position().row - node.start_position().row) + 1,
+            function_name: ctx.name.clone(),
+            lines_of_code: loc,
             parameter_count: ctx.params,
             cyclomatic_complexity: ctx.comp,
         }
