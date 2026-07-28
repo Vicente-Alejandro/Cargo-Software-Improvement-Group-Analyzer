@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.5.1` — pre-release, not yet published to crates.io.
+**Current version:** `0.5.1`
 
 </div>
 
@@ -94,20 +94,18 @@ Static analysis for Rust today means either a fast linter (`clippy`) that checks
 
 ## Installation
 
-`cargo-sig` is under active development and not yet published to crates.io.
+To install `cargo-sig` globally via crates.io:
+
+```bash
+cargo install cargo-sig
+```
 
 **From source:**
 
 ```bash
-git clone https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer.git
-cd Cargo-Software-Improvement-Group-Analyzer
+git clone https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer-.git
+cd Cargo-SIG-Software-Improvement-Group-Analyzer-
 cargo install --path .
-```
-
-**From crates.io (once published):**
-
-```bash
-cargo install cargo-sig
 ```
 
 After installation, run it as a Cargo subcommand in any project:
@@ -204,8 +202,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-sig
-        run: cargo install --path .
-        # Or: cargo install cargo-sig (once published)
+        run: cargo install cargo-sig
 
       - name: Run maintainability gate
         run: cargo sig --fail-below 3
