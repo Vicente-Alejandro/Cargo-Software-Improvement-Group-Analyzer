@@ -34,26 +34,25 @@ impl VolumeEngine {
     ) -> Vec<FunctionMetric> {
         let mut metrics = Vec::new();
         let mut cursor = tree.root_node().walk();
-        while self.visit_node(&mut cursor, path, code, &mut metrics) {}
+        while self.visit_node(&mut cursor, (path, code), &mut metrics) {}
         metrics
     }
 
     fn visit_node(
         &self,
         cur: &mut tree_sitter::TreeCursor,
-        p: &Path,
-        c: &str,
+        file: (&Path, &str),
         m: &mut Vec<FunctionMetric>,
     ) -> bool {
         let is_func = cur.node().kind() == "function_item";
         if is_func {
-            self.process_func(cur.node(), p, c, m);
+            self.process_func(cur.node(), file, m);
         }
         self.advance_cursor(cur, is_func)
     }
 
-    fn process_func(&self, n: Node, p: &Path, c: &str, m: &mut Vec<FunctionMetric>) {
-        let met = self.extract_metric(n, p, c);
+    fn process_func(&self, n: Node, file: (&Path, &str), m: &mut Vec<FunctionMetric>) {
+        let met = self.extract_metric(n, file.0, file.1);
         if !met.function_name.starts_with("test_") {
             m.push(met);
         }
@@ -105,18 +104,34 @@ impl VolumeEngine {
 
     fn eval_node(&self, child: Node, root: Node, ctx: &mut Ctx) {
         let kind = child.kind();
-        if kind == "identifier" && child.parent() == Some(root) {
+        if self.is_branch(kind) {
+            ctx.comp += 1;
+            return;
+        }
+        self.eval_non_branch(child, root, ctx, kind);
+    }
+
+    fn eval_non_branch(&self, child: Node, root: Node, ctx: &mut Ctx, k: &str) {
+        if self.is_param(k) {
+            ctx.params += 1;
+            return;
+        }
+        if self.is_id(child, root, k) {
             ctx.name = child
                 .utf8_text(ctx.code.as_bytes())
                 .unwrap_or("unknown")
                 .to_string();
-        } else if kind == "parameter" || kind == "self_parameter" {
-            ctx.params += 1;
-        } else if self.is_branch(kind) {
-            ctx.comp += 1;
-        } else {
-            self.check_binary(child, ctx);
+            return;
         }
+        self.check_binary(child, ctx);
+    }
+
+    fn is_param(&self, k: &str) -> bool {
+        k == "parameter" || k == "self_parameter"
+    }
+
+    fn is_id(&self, child: Node, root: Node, k: &str) -> bool {
+        k == "identifier" && child.parent() == Some(root)
     }
 
     fn check_binary(&self, child: Node, ctx: &mut Ctx) {
@@ -185,7 +200,7 @@ mod tests {
 
         let mut metrics = Vec::new();
         let mut cursor = tree.root_node().walk();
-        while engine.visit_node(&mut cursor, Path::new("dummy.rs"), code, &mut metrics) {}
+        while engine.visit_node(&mut cursor, (Path::new("dummy.rs"), code), &mut metrics) {}
 
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].function_name, "example_func");

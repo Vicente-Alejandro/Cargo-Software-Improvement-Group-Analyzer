@@ -64,20 +64,20 @@ fn is_mod(m: &FunctionMetric) -> bool {
 
 fn compute_score(t: [usize; 4], dup: f32, balanced: bool) -> Score {
     let tot = if t[0] == 0 { 1.0 } else { t[0] as f64 };
-    let mut stars = calculate_stars(
+    let (m, h, v) = (
         (t[1] as f64 / tot) * 100.0,
         (t[2] as f64 / tot) * 100.0,
         (t[3] as f64 / tot) * 100.0,
-        dup,
     );
+    let mut stars = calculate_stars(m, h, v, dup);
     if !balanced && stars > 5 {
         stars = 5;
     }
     Score {
         stars,
-        pct_moderate: (t[1] as f64 / tot) * 100.0,
-        pct_high: (t[2] as f64 / tot) * 100.0,
-        pct_very_high: (t[3] as f64 / tot) * 100.0,
+        pct_moderate: m,
+        pct_high: h,
+        pct_very_high: v,
     }
 }
 
@@ -134,14 +134,18 @@ const THRESHOLDS: [Threshold; 6] = [
     },
 ];
 
-fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
-    let d64 = d as f64;
-    for t in THRESHOLDS {
-        if v <= t.v && h <= t.h && m <= t.m && d64 <= t.d {
-            return t.stars;
-        }
+impl Threshold {
+    fn passes(&self, m: f64, h: f64, v: f64, d: f64) -> bool {
+        v <= self.v && h <= self.h && m <= self.m && d <= self.d
     }
-    1
+}
+
+fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
+    THRESHOLDS
+        .iter()
+        .find(|t| t.passes(m, h, v, d as f64))
+        .map(|t| t.stars)
+        .unwrap_or(1)
 }
 
 #[cfg(test)]
@@ -176,15 +180,13 @@ mod tests {
     #[test]
     fn test_interface_size_penalty() {
         // Test that parameter count alone triggers a risk categorization.
-        let metrics = vec![
-            FunctionMetric {
-                function_name: "test_fn".to_string(),
-                file_path: PathBuf::new(),
-                lines_of_code: 10,
-                cyclomatic_complexity: 1,
-                parameter_count: 8, // Very High risk
-            }
-        ];
+        let metrics = vec![FunctionMetric {
+            function_name: "test_fn".to_string(),
+            file_path: PathBuf::new(),
+            lines_of_code: 10,
+            cyclomatic_complexity: 1,
+            parameter_count: 8, // Very High risk
+        }];
         let score = evaluate(&metrics, 0.0, true);
         // 100% of the code is Very High risk -> 1 star.
         assert_eq!(score.stars, 1);

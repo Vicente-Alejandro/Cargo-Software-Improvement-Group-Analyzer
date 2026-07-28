@@ -33,15 +33,15 @@ fn print_summary(metrics: &[FunctionMetric], dup: f32) {
             cmp += 1;
         }
     }
-    print_stats(metrics.len(), loc, prm, cmp, dup);
+    print_stats(metrics.len(), [loc, prm, cmp], dup);
 }
 
-fn print_stats(tot: usize, loc: usize, prm: usize, cmp: usize, dup: f32) {
+fn print_stats(tot: usize, bad: [usize; 3], dup: f32) {
     println!("\n{}", "Summary:".bold());
     println!("Total Functions: {}", tot);
-    println!("Volume > 15 lines: {}", color(loc));
-    println!("Interface > 4 params: {}", color(prm));
-    println!("Complexity > 5 branches: {}", color(cmp));
+    println!("Volume > 15 lines: {}", color(bad[0]));
+    println!("Interface > 4 params: {}", color(bad[1]));
+    println!("Complexity > 5 branches: {}", color(bad[2]));
 
     let d_col = if dup > 5.0 {
         format!("{:.1}%", dup).red().to_string()
@@ -67,14 +67,8 @@ pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
         *d.entry(p).or_insert(0) += m.lines_of_code;
         tot += m.lines_of_code;
     }
-    let mut ok = true;
-    for (_, loc) in d {
-        let pct = (loc as f32 / tot as f32) * 100.0;
-        if pct > 50.0 {
-            ok = false;
-        }
-    }
-    ok
+    !d.values()
+        .any(|&loc| (loc as f32 / tot as f32) * 100.0 > 50.0)
 }
 
 pub fn print_balance(metrics: &[FunctionMetric]) -> bool {
@@ -118,17 +112,18 @@ fn print_imbalance(d: &Path, pct: f32) {
 fn print_hotspots(m: &[FunctionMetric], ch: &HashMap<PathBuf, usize>, cov: &Option<HashMap<PathBuf, Coverage>>) {
     let mut h = match_hotspots(&compute_file_risk(m), ch, cov);
     if h.is_empty() {
-        println!("\n{} No Hotspots.", "✅ [OK]".green().bold());
+        println!("  {} No Hotspots.", "✅ [OK]".green());
         return;
     }
     h.sort_by_key(|b| std::cmp::Reverse(b.1 * b.2));
-    println!("\n{}", "⚠️ Hotspots (Risk + Churn):".bold().yellow());
+    println!("\n{} {}", "⚠️".yellow(), "Hotspots (Risk + Churn):".bold().yellow());
     for (i, (p, r, c, cv)) in h.iter().take(5).enumerate() {
-        print_hotspot_item(i, p, *r, *c, *cv);
+        print_hotspot_item(i, (p, *r, *c, *cv));
     }
 }
 
-fn print_hotspot_item(i: usize, p: &Path, r: usize, c: usize, cv: Option<f32>) {
+fn print_hotspot_item(i: usize, item: (&Path, usize, usize, Option<f32>)) {
+    let (p, r, c, cv) = item;
     let n = p.file_name().unwrap_or_default().to_string_lossy();
     let c_str = cv
         .map(|v| format!("{:.0}% cov", v))

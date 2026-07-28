@@ -15,13 +15,7 @@ fn main() -> anyhow::Result<()> {
 
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
-    let mut files = metrics
-        .iter()
-        .map(|m| m.file_path.clone())
-        .collect::<Vec<_>>();
-    files.sort();
-    files.dedup();
-    let dup_pct = duplication::calculate_duplication(&files);
+    let dup_pct = get_dup(&metrics);
 
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
 
@@ -47,4 +41,11 @@ fn parse_args() -> SigArgs {
         args.remove(0);
     }
     SigArgs::parse(args.into_iter())
+}
+
+fn get_dup(metrics: &[analysis::FunctionMetric]) -> f32 {
+    let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
+    f.sort();
+    f.dedup();
+    duplication::calculate_duplication(&f)
 }
