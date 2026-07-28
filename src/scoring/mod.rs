@@ -134,16 +134,10 @@ const THRESHOLDS: [Threshold; 6] = [
     },
 ];
 
-impl Threshold {
-    fn passes(&self, m: f64, h: f64, v: f64, d: f64) -> bool {
-        v <= self.v && h <= self.h && m <= self.m && d <= self.d
-    }
-}
-
 fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
     THRESHOLDS
         .iter()
-        .find(|t| t.passes(m, h, v, d as f64))
+        .find(|t| v <= t.v && h <= t.h && m <= t.m && (d as f64) <= t.d)
         .map(|t| t.stars)
         .unwrap_or(1)
 }

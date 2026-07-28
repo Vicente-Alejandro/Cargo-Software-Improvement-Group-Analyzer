@@ -65,7 +65,7 @@ impl VolumeEngine {
         if cursor.goto_next_sibling() {
             return true;
         }
-        self.ascend(cursor)
+        self.ascend(cursor, None)
     }
 
     fn extract_metric(&self, node: Node, path: &Path, code: &str) -> FunctionMetric {
@@ -93,13 +93,10 @@ impl VolumeEngine {
 
     fn eval_func_node(&self, cur: &mut tree_sitter::TreeCursor, root: Node, ctx: &mut Ctx) -> bool {
         self.eval_node(cur.node(), root, ctx);
-        if cur.goto_first_child() {
+        if cur.goto_first_child() || cur.goto_next_sibling() {
             return true;
         }
-        if cur.goto_next_sibling() {
-            return true;
-        }
-        self.ascend_func(cur, root)
+        self.ascend(cur, Some(root))
     }
 
     fn eval_node(&self, child: Node, root: Node, ctx: &mut Ctx) {
@@ -108,22 +105,23 @@ impl VolumeEngine {
             ctx.comp += 1;
             return;
         }
-        self.eval_non_branch(child, root, ctx, kind);
+        self.eval_non_branch((child, root), ctx, kind);
     }
 
-    fn eval_non_branch(&self, child: Node, root: Node, ctx: &mut Ctx, k: &str) {
+    fn eval_non_branch(&self, nodes: (Node, Node), ctx: &mut Ctx, k: &str) {
         if self.is_param(k) {
             ctx.params += 1;
             return;
         }
-        if self.is_id(child, root, k) {
-            ctx.name = child
+        if self.is_id(nodes.0, nodes.1, k) {
+            ctx.name = nodes
+                .0
                 .utf8_text(ctx.code.as_bytes())
                 .unwrap_or("unknown")
                 .to_string();
             return;
         }
-        self.check_binary(child, ctx);
+        self.check_binary(nodes.0, ctx);
     }
 
     fn is_param(&self, k: &str) -> bool {
@@ -154,20 +152,9 @@ impl VolumeEngine {
         )
     }
 
-    fn ascend(&self, cursor: &mut tree_sitter::TreeCursor) -> bool {
+    fn ascend(&self, cursor: &mut tree_sitter::TreeCursor, root: Option<Node>) -> bool {
         loop {
-            if !cursor.goto_parent() {
-                return false;
-            }
-            if cursor.goto_next_sibling() {
-                return true;
-            }
-        }
-    }
-
-    fn ascend_func(&self, cursor: &mut tree_sitter::TreeCursor, root: Node) -> bool {
-        loop {
-            if !cursor.goto_parent() || cursor.node() == root {
+            if !cursor.goto_parent() || root.is_some_and(|r| cursor.node() == r) {
                 return false;
             }
             if cursor.goto_next_sibling() {
