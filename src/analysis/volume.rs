@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use tree_sitter::{Node, Parser};
+use tree_sitter::Node;
 
 #[derive(Debug, Clone)]
 pub struct FunctionMetric {
@@ -26,15 +26,16 @@ impl VolumeEngine {
         Self {}
     }
 
-    pub fn analyze_file(&self, path: &Path, code: &str) -> anyhow::Result<Vec<FunctionMetric>> {
-        let mut parser = Parser::new();
-        parser.set_language(&tree_sitter_rust::LANGUAGE.into())?;
-        let tree = parser.parse(code, None).unwrap();
+    pub fn analyze_tree(
+        &self,
+        path: &Path,
+        code: &str,
+        tree: &tree_sitter::Tree,
+    ) -> Vec<FunctionMetric> {
         let mut metrics = Vec::new();
         let mut cursor = tree.root_node().walk();
-
         while self.visit_node(&mut cursor, path, code, &mut metrics) {}
-        Ok(metrics)
+        metrics
     }
 
     fn visit_node(
@@ -141,5 +142,36 @@ impl VolumeEngine {
                 return true;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ast_extraction() {
+        let code = r#"
+        fn example_func(a: i32, b: i32) {
+            if a > 0 && b > 0 {
+                println!("test");
+            }
+        }
+        "#;
+
+        let engine = VolumeEngine::new();
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+        let tree = parser.parse(code, None).unwrap();
+
+        let metrics = engine.analyze_tree(Path::new("dummy.rs"), code, &tree);
+        assert_eq!(metrics.len(), 1);
+        assert_eq!(metrics[0].function_name, "example_func");
+        assert_eq!(metrics[0].parameter_count, 2);
+        // Base complexity 1 + 1 (if) + 1 (&&) = 3
+        assert_eq!(metrics[0].cyclomatic_complexity, 3);
+        assert_eq!(metrics[0].lines_of_code, 5);
     }
 }

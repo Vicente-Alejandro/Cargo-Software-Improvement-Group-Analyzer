@@ -129,3 +129,33 @@ fn calculate_stars(m: f64, h: f64, v: f64) -> u8 {
     }
     1
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_perfect_score() {
+        let score = compute_score([100, 0, 0, 0]);
+        assert_eq!(score.stars, 7);
+    }
+
+    #[test]
+    fn test_one_star() {
+        let score = compute_score([100, 0, 0, 60]);
+        assert_eq!(score.stars, 1);
+    }
+
+    #[test]
+    fn test_moderate_penalty() {
+        // 20% moderate -> 5 stars
+        let score = compute_score([100, 20, 0, 0]);
+        assert_eq!(score.stars, 5);
+    }
+
+    #[test]
+    fn test_empty_metrics() {
+        let score = evaluate(&[]);
+        assert_eq!(score.stars, 7);
+    }
+}

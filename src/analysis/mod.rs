@@ -11,15 +11,20 @@ pub fn run_analysis(dir: &Path) -> anyhow::Result<Vec<FunctionMetric>> {
 
     let metrics = files
         .into_par_iter()
-        .filter_map(|path| parse_file(&engine, path))
+        .filter_map(|path| parse_and_analyze(&engine, path))
         .flatten()
         .collect();
     Ok(metrics)
 }
 
-fn parse_file(engine: &VolumeEngine, path: PathBuf) -> Option<Vec<FunctionMetric>> {
+fn parse_and_analyze(engine: &VolumeEngine, path: PathBuf) -> Option<Vec<FunctionMetric>> {
     let source = std::fs::read_to_string(&path).ok()?;
-    engine.analyze_file(&path, &source).ok()
+    let mut parser = tree_sitter::Parser::new();
+    parser
+        .set_language(&tree_sitter_rust::LANGUAGE.into())
+        .ok()?;
+    let tree = parser.parse(&source, None)?;
+    Some(engine.analyze_tree(&path, &source, &tree))
 }
 
 fn gather_files(dir: &Path, files: &mut Vec<PathBuf>) -> anyhow::Result<()> {
