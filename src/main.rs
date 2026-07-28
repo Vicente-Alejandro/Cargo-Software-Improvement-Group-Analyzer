@@ -48,30 +48,17 @@ fn print_summary(metrics: &[FunctionMetric]) {
 
     println!("\n{}", "Analysis Summary:".bold());
     println!("Total Functions Analyzed: {}", metrics.len());
-    println!(
-        "Functions > 15 lines (Volume): {}",
-        if loc > 0 {
-            loc.red().to_string()
-        } else {
-            loc.green().to_string()
-        }
-    );
-    println!(
-        "Functions > 4 parameters (Interfaces): {}",
-        if prm > 0 {
-            prm.red().to_string()
-        } else {
-            prm.green().to_string()
-        }
-    );
-    println!(
-        "Functions > 5 branches (Complexity): {}",
-        if cmp > 0 {
-            cmp.red().to_string()
-        } else {
-            cmp.green().to_string()
-        }
-    );
+    println!("Functions > 15 lines (Volume): {}", color(loc));
+    println!("Functions > 4 parameters (Interfaces): {}", color(prm));
+    println!("Functions > 5 branches (Complexity): {}", color(cmp));
+}
+
+fn color(val: usize) -> String {
+    if val > 0 {
+        val.red().to_string()
+    } else {
+        val.green().to_string()
+    }
 }
 
 fn print_profile(score: &Score) {
@@ -84,32 +71,36 @@ fn print_profile(score: &Score) {
     );
 
     println!("\n─────────────────────────────────────");
-    let stars = "★".repeat(score.stars as usize) + &"☆".repeat((7 - score.stars) as usize);
-    let c = match score.stars {
-        7 | 6 => stars.green().bold().to_string(),
-        5 | 4 => stars.yellow().bold().to_string(),
-        _ => stars.red().bold().to_string(),
-    };
+    let c = format_stars(score.stars);
     println!("Maintainability Rating: {} ({} / 7)", c, score.stars);
 }
 
-fn enforce_gate(stars: u8, gate: u8) {
-    if gate > 0 {
-        if stars < gate {
-            println!(
-                "\n{} Rating {} is below the required gate of {} stars.",
-                "❌ [ERROR]".red().bold(),
-                stars,
-                gate
-            );
-            std::process::exit(1);
-        } else {
-            println!(
-                "\n{} Passed the quality gate ({} >= {}).",
-                "✅ [OK]".green().bold(),
-                stars,
-                gate
-            );
-        }
+fn format_stars(stars: u8) -> String {
+    let s = "★".repeat(stars as usize) + &"☆".repeat((7 - stars) as usize);
+    match stars {
+        7 | 6 => s.green().bold().to_string(),
+        5 | 4 => s.yellow().bold().to_string(),
+        _ => s.red().bold().to_string(),
     }
+}
+
+fn enforce_gate(stars: u8, gate: u8) {
+    if gate == 0 {
+        return;
+    }
+    if stars < gate {
+        println!(
+            "\n{} Rating {} is below the required gate of {} stars.",
+            "❌ [ERROR]".red().bold(),
+            stars,
+            gate
+        );
+        std::process::exit(1);
+    }
+    println!(
+        "\n{} Passed the quality gate ({} >= {}).",
+        "✅ [OK]".green().bold(),
+        stars,
+        gate
+    );
 }

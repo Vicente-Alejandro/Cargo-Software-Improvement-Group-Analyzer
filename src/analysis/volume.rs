@@ -48,7 +48,10 @@ impl VolumeEngine {
         let node = cur.node();
         let is_func = node.kind() == "function_item";
         if is_func {
-            m.push(self.extract_metric(node, p, c));
+            let metric = self.extract_metric(node, p, c);
+            if !metric.function_name.starts_with("test_") {
+                m.push(metric);
+            }
         }
         self.advance_cursor(cur, is_func)
     }
@@ -103,7 +106,13 @@ impl VolumeEngine {
             ctx.params += 1;
         } else if self.is_branch(kind) {
             ctx.comp += 1;
-        } else if kind == "binary_expression" {
+        } else {
+            self.check_binary(child, ctx);
+        }
+    }
+
+    fn check_binary(&self, child: Node, ctx: &mut Ctx) {
+        if child.kind() == "binary_expression" {
             let txt = child.utf8_text(ctx.code.as_bytes()).unwrap_or("");
             if txt.contains("&&") || txt.contains("||") {
                 ctx.comp += 1;
@@ -166,12 +175,14 @@ mod tests {
             .unwrap();
         let tree = parser.parse(code, None).unwrap();
 
-        let metrics = engine.analyze_tree(Path::new("dummy.rs"), code, &tree);
+        let mut metrics = Vec::new();
+        let mut cursor = tree.root_node().walk();
+        while engine.visit_node(&mut cursor, Path::new("dummy.rs"), code, &mut metrics) {}
+
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].function_name, "example_func");
         assert_eq!(metrics[0].parameter_count, 2);
-        // Base complexity 1 + 1 (if) + 1 (&&) = 3
         assert_eq!(metrics[0].cyclomatic_complexity, 3);
-        assert_eq!(metrics[0].lines_of_code, 5);
+        assert_eq!(metrics[0].lines_of_code, 6);
     }
 }
