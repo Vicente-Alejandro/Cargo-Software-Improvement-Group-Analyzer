@@ -5,7 +5,7 @@ rust-version = "1.85"
 edition = "2024"
 description = "A Cargo subcommand for static code analysis, measuring maintainability, duplication, and churn vs. coverage based on SIG methodology."
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
-repository = "https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer-"
+repository = "https://github.com/Vicente-Alejandro/Cargo-SIG-Software-Improvement-Group-Analyzer"
 documentation = "https://docs.rs/cargo-sig"
 readme = "README.md"
 license = "MIT"
@@ -17,6 +17,9 @@ exclude = [
     "coverage.lcov",
     ".github/",
     ".agents/",
+    "/tools/",
+    "tree.txt",
+    "WORK.md"
 ]
 
 [dependencies]
