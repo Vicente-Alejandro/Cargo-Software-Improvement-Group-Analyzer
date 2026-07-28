@@ -49,11 +49,11 @@ fn process_lcov_line(
     }
 }
 
-fn parse_da_line(da: &str, path: &PathBuf, map: &mut HashMap<PathBuf, Coverage>) {
+fn parse_da_line(da: &str, path: &Path, map: &mut HashMap<PathBuf, Coverage>) {
     let parts: Vec<&str> = da.split(',').collect();
     if parts.len() >= 2 {
         if let Ok(hits) = parts[1].trim().parse::<usize>() {
-            let entry = map.entry(path.clone()).or_default();
+            let entry = map.entry(path.to_path_buf()).or_default();
             entry.total += 1;
             if hits > 0 {
                 entry.hit += 1;
