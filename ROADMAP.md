@@ -3,31 +3,42 @@
 **Project:** Cargo Software Improvement Group Analyzer (`cargo-sig`)
 **Vision:** Bridging the gap between high-performance systems and enterprise software quality.
 **Core Principles:**
-1. **Zero-Configuration:** `cargo sig` should work out-of-the-box on any Rust project. Flags are strictly for advanced overrides.
-2. **Deep Modules:** Complex implementations (AST parsing, Git history) are hidden behind simple, unified interfaces.
-3. **Data-Oriented Design & Concurrency:** Maximize performance using cache-coherent structures and parallel processing (`rayon`).
-4. **Pure Rust:** No C dependencies. Leveraging native crates like `gix` and `jscpd-rs` for frictionless installation.
+1. **Zero-Configuration & Ultra-Minimal:** `cargo sig` works out-of-the-box. We hand-roll the CLI parsing (`std::env::args`) and terminal styling (`owo-colors`) to maintain a microscopic dependency tree.
+2. **Deep Modules:** Complex implementations (AST parsing) are hidden behind simple, unified interfaces.
+3. **Data-Oriented Design & Concurrency:** Maximize performance using cache-coherent structures.
+4. **Pure Rust:** No C dependencies. Leveraging native crates where strictly necessary.
 
 ---
 
 ## v0.1.0 — Foundation & Deep Modules
-**Status:** In Progress
+**Status:** Completed
 
-- [ ] **CLI Skeleton:** Implement the zero-configuration CLI using `clap`. The default `cargo sig` command should perform a standard check.
-- [ ] **Project Structure:** Establish the internal modular architecture (`analysis`, `churn`, `duplication`, `scoring`).
-- [ ] **Dependency Baseline:** Upgrade to `tree-sitter` (latest), `clap` v4.6+, replace `git2` with `gix` (gitoxide), and add `rayon` & `jscpd-rs`.
-- [ ] **Volume Analysis (SIG Rule 1):** Traverse the AST to measure Lines of Code (LOC) per function. Flag functions exceeding 15 lines.
-- [ ] **Interface Analysis (SIG Rule 4):** Analyze function signatures to flag those with more than 4 parameters.
-- [ ] **Basic Reporting:** Output a clean, colored summary to the terminal.
+- [x] **CLI Skeleton:** Implement the zero-configuration CLI manually. The default `cargo sig` command performs a standard check.
+- [x] **Project Structure:** Establish the internal modular architecture (`analysis`, `churn`, `duplication`, `scoring`).
+- [x] **Dependency Baseline:** Establish bare-metal baseline (removed `clap` and heavy macros, using `owo-colors`, `tree-sitter` and `tree-sitter-rust`).
 
-## v0.2.0 — Concurrency, Complexity & Automation
+## v0.2.0 — AST Volume Analysis
+**Status:** Completed
+
+- [x] **Volume Analysis (SIG Rule 1):** Traverse the AST to measure Lines of Code (LOC) per function. Flag functions exceeding 15 lines.
+- [x] **Interface Analysis (SIG Rule 4):** Analyze function signatures to flag those with more than 4 parameters.
+- [x] **Basic Reporting:** Output a clean, colored summary to the terminal.
+- [x] **Data-Oriented Metrics:** Store extracted metrics in contiguous flat arrays for fast aggregation.
+
+## v0.3.0 — Scoring & Concurrency
 **Status:** Planned
 
-- [ ] **Parallel Processing:** Implement parallel AST parsing across multiple files using `rayon`.
-- [ ] **Data-Oriented Metrics:** Store extracted metrics in contiguous flat arrays for fast aggregation.
+- [ ] **1-7 Star Scoring Engine:** Implement the math in `scoring/mod.rs` to map Volume/Complexity metrics to the 1-7 star scale.
 - [ ] **Cyclomatic Complexity (SIG Rule 2):** Analyze AST branches (`if`, `match`, `while`, `for`) to flag units with complexity > 5.
-- [ ] **Component Balance:** Analyze module-level coupling and boundaries (e.g., dependencies between internal crates/modules).
-- [ ] **CI/CD Quality Gate:** Implement `--fail-below` flag and track the project's own DORA metrics using GitHub Actions.
+- [ ] **Parallel Processing:** Implement parallel AST parsing across multiple files using `rayon`.
+- [ ] **CI/CD Quality Gate:** Implement the logic for `--fail-below <1-7>` flag to fail the process.
+
+## v0.4.0 — Hotspots (Churn vs. Coverage)
+**Status:** Planned
+
+- [ ] **Git History Parser:** Integrate `gix` (with ultra-minimal features) to measure churn per file.
+- [ ] **Coverage Ingestion:** Parse LLVM-COV JSON.
+- [ ] **Component Balance:** Analyze module-level coupling and boundaries.
 
 ---
 
