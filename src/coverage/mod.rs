@@ -10,7 +10,11 @@ pub struct Coverage {
 
 impl Coverage {
     pub fn percent(&self) -> f32 {
-        if self.total == 0 { 100.0 } else { (self.hit as f32 / self.total as f32) * 100.0 }
+        if self.total == 0 {
+            100.0
+        } else {
+            (self.hit as f32 / self.total as f32) * 100.0
+        }
     }
 }
 
@@ -29,7 +33,12 @@ fn parse_lcov_content(dir: &Path, content: &str) -> Option<HashMap<PathBuf, Cove
     Some(map)
 }
 
-fn process_lcov_line(line: &str, dir: &Path, current_file: &mut Option<PathBuf>, map: &mut HashMap<PathBuf, Coverage>) {
+fn process_lcov_line(
+    line: &str,
+    dir: &Path,
+    current_file: &mut Option<PathBuf>,
+    map: &mut HashMap<PathBuf, Coverage>,
+) {
     if let Some(file) = line.strip_prefix("SF:") {
         let p = dir.join(file.trim());
         *current_file = Some(p.canonicalize().unwrap_or(p));
@@ -46,7 +55,9 @@ fn parse_da_line(da: &str, path: &PathBuf, map: &mut HashMap<PathBuf, Coverage>)
         if let Ok(hits) = parts[1].trim().parse::<usize>() {
             let entry = map.entry(path.clone()).or_default();
             entry.total += 1;
-            if hits > 0 { entry.hit += 1; }
+            if hits > 0 {
+                entry.hit += 1;
+            }
         }
     }
 }
