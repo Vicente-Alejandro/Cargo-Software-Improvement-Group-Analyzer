@@ -88,14 +88,14 @@ This release is deliberately scoped to correctness only — no new features — 
 **Status:** Completed
 
 - [x] **Total LOC threshold:** aggregate the per-function LOC already computed since v0.2.0 into a whole-codebase size check.
-- [ ] **Scoring integration:** lowest priority of the batch — cheapest to add, smallest expected impact on the final score.
+- [x] **Scoring integration:** lowest priority of the batch — cheapest to add, smallest expected impact on the final score.
 
 ## v0.6.5 — Dogfooding & Release Readiness
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **Self-validation:** add a CI step that runs `cargo sig --fail-below <N>` against `cargo-sig`'s own repository.
-- [ ] **Full regression pass:** confirm all 6 implemented SIG guidelines plus Churn × Coverage are reflected in the final star math — closes the loop opened in v0.6.0.
-- [ ] **Docs sync:** final pass across `README.md`, `ROADMAP.md`, and `Cargo.toml` to guarantee version, star scale, and dependency list all agree — the last gate before `cargo publish` to crates.io.
+- [x] **Self-validation:** add a CI step that runs `cargo sig --fail-below <N>` against `cargo-sig`'s own repository.
+- [x] **Full regression pass:** confirm all 6 implemented SIG guidelines plus Churn × Coverage are reflected in the final star math — closes the loop opened in v0.6.0.
+- [x] **Docs sync:** final pass across `README.md`, `ROADMAP.md`, and `Cargo.toml` to guarantee version, star scale, and dependency list all agree — the last gate before `cargo publish` to crates.io.
 
 **Explicitly out of scope for v0.6:** SIG Guideline 10 (Write Clean Code) — too subjective to score without a dedicated lint engine of its own, and already largely covered by `clippy`.
 
