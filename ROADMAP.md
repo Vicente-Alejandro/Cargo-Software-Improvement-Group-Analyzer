@@ -97,7 +97,13 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Full regression pass:** confirm all 6 implemented SIG guidelines plus Churn × Coverage are reflected in the final star math — closes the loop opened in v0.6.0.
 - [x] **Docs sync:** final pass across `README.md`, `ROADMAP.md`, and `Cargo.toml` to guarantee version, star scale, and dependency list all agree — the last gate before `cargo publish` to crates.io.
 
-**Explicitly out of scope for v0.6:** SIG Guideline 10 (Write Clean Code) — too subjective to score without a dedicated lint engine of its own, and already largely covered by `clippy`.
+## v0.7.0 — Auto-Coverage Generation
+**Status:** Completed
+
+- [x] **Zero-config coverage:** if `cargo-llvm-cov` is installed, execute it automatically to generate `coverage.lcov` on the fly instead of expecting the user to run it manually.
+- [x] **Degraded grace message:** if not installed, print a clear tip on how to install it instead of a silent N/A.
+
+**Explicitly out of scope for v0.7:** SIG Guideline 10 (Write Clean Code) — too subjective to score without a dedicated lint engine of its own, and already largely covered by `clippy`.
 
 ---
 

@@ -18,8 +18,41 @@ impl Coverage {
     }
 }
 
-pub fn read_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Coverage>> {
+pub fn load_or_generate_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Coverage>> {
     let lcov_path = project_dir.join("coverage.lcov");
+    if let Ok(content) = fs::read_to_string(&lcov_path) {
+        return parse_lcov_content(project_dir, &content);
+    }
+
+    // Check if cargo-llvm-cov is installed
+    let version_status = std::process::Command::new("cargo")
+        .args(["llvm-cov", "--version"])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+
+    if !version_status.is_ok_and(|s| s.success()) {
+        return None; // Not installed
+    }
+
+    use owo_colors::OwoColorize;
+    println!(
+        "{} ⏳ Generating coverage data via cargo-llvm-cov...",
+        "[cargo-sig]".bold().cyan()
+    );
+
+    let status = std::process::Command::new("cargo")
+        .args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"])
+        .current_dir(project_dir)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .ok()?;
+
+    if !status.success() {
+        return None;
+    }
+
     let content = fs::read_to_string(&lcov_path).ok()?;
     parse_lcov_content(project_dir, &content)
 }

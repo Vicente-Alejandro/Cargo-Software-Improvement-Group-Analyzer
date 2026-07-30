@@ -119,7 +119,7 @@ fn print_profile(s: &Score) {
         let v_str = format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct);
         println!("  Test Coverage: {}", color_stars(st, v_str));
     } else {
-        println!("  Test Coverage: {}", "N/A (No coverage.lcov found)".dimmed());
+        println!("  Test Coverage: {}", "N/A (Run 'cargo install cargo-llvm-cov' to enable)".dimmed());
     }
     
     let vol_str = format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc);

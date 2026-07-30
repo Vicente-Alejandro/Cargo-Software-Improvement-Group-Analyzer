@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
     let dup_pct = duplication::calculate_duplication(&f);
     let graph = coupling::CouplingGraph::build(&dir, &f);
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
-    let cov = coverage::read_lcov(&dir);
+    let cov = coverage::load_or_generate_lcov(&dir);
     let is_balanced = report::is_balanced(&metrics);
     let ctx = scoring::EvalCtx {
         metrics: &metrics,
