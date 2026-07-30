@@ -121,12 +121,21 @@ fn print_profile(s: &Score) {
 }
 
 fn star_string(stars: u8) -> String {
-    format!("{}{}", "★".repeat(stars as usize), "☆".repeat((7 - stars) as usize))
+    format!(
+        "{}{}",
+        "★".repeat(stars as usize),
+        "☆".repeat((7 - stars) as usize)
+    )
 }
 
 pub fn enforce_gate(stars: u8, fail_below: u8) {
     if stars < fail_below {
-        eprintln!("\n{} Rating {} is below the required {}", "ERROR:".red().bold(), stars, fail_below);
+        eprintln!(
+            "\n{} Rating {} is below the required {}",
+            "ERROR:".red().bold(),
+            stars,
+            fail_below
+        );
         std::process::exit(1);
     }
 }
