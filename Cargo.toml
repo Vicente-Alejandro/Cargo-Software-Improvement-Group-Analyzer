@@ -19,7 +19,8 @@ exclude = [
     ".agents/",
     "/tools/",
     "tree.txt",
-    "WORK.md"
+    "WORK.md",
+    ".github"
 ]
 
 [dependencies]
