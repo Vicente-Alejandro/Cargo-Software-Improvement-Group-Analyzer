@@ -85,9 +85,9 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Scoring integration:** wire it into the star math alongside the other guidelines.
 
 ## v0.6.4 — Codebase Size Guideline (SIG Guideline 8)
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **Total LOC threshold:** aggregate the per-function LOC already computed since v0.2.0 into a whole-codebase size check.
+- [x] **Total LOC threshold:** aggregate the per-function LOC already computed since v0.2.0 into a whole-codebase size check.
 - [ ] **Scoring integration:** lowest priority of the batch — cheapest to add, smallest expected impact on the final score.
 
 ## v0.6.5 — Dogfooding & Release Readiness

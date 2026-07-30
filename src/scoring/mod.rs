@@ -10,6 +10,8 @@ pub struct Score {
     pub code_stars: u8,
     pub cov_stars: Option<u8>,
     pub cov_pct: Option<f32>,
+    pub volume_stars: u8,
+    pub total_loc: usize,
     pub pct_moderate: f64,
     pub pct_high: f64,
     pub pct_very_high: f64,
@@ -33,7 +35,7 @@ pub struct EvalCtx<'a> {
 }
 
 #[rustfmt::skip]
-fn aggregate_risk(ctx: &EvalCtx) -> [usize; 4] {
+fn aggregate_risk(ctx: &EvalCtx) -> ([usize; 4], usize) {
     let mut t = [0; 4];
     for m in ctx.metrics {
         t[0] += m.lines_of_code;
@@ -42,7 +44,7 @@ fn aggregate_risk(ctx: &EvalCtx) -> [usize; 4] {
         else if r == 5 { t[2] += m.lines_of_code; }
         else if r == 2 { t[1] += m.lines_of_code; }
     }
-    t
+    (t, t[0])
 }
 
 #[rustfmt::skip]
@@ -54,13 +56,18 @@ fn apply_coverage(mut score: Score, ctx: &EvalCtx) -> Score {
         score.cov_stars = Some(c_stars);
         score.stars = score.code_stars.min(c_stars);
     } else { score.stars = score.code_stars; }
+    
+    if score.volume_stars <= 2 && score.stars > 1 { score.stars -= 1; }
     score
 }
 
 #[rustfmt::skip]
 pub fn evaluate(ctx: &EvalCtx) -> Score {
-    if ctx.metrics.is_empty() { return Score { stars: 7, code_stars: 7, ..Default::default() }; }
-    let mut score = compute_score(aggregate_risk(ctx), ctx.dup, ctx.bal);
+    if ctx.metrics.is_empty() { return Score { stars: 7, code_stars: 7, volume_stars: 7, ..Default::default() }; }
+    let (t, total_loc) = aggregate_risk(ctx);
+    let mut score = compute_score(t, ctx.dup, ctx.bal);
+    score.total_loc = total_loc;
+    score.volume_stars = calculate_volume_stars(total_loc);
     if !ctx.graph.detect_cycles().is_empty() && score.code_stars > 1 { score.code_stars = 1; }
     apply_coverage(score, ctx)
 }
@@ -93,7 +100,7 @@ fn compute_score(t: [usize; 4], dup: f32, balanced: bool) -> Score {
     let (m, h, v) = ((t[1] as f64 / tot) * 100.0, (t[2] as f64 / tot) * 100.0, (t[3] as f64 / tot) * 100.0);
     let mut stars = calculate_stars(m, h, v, dup);
     if !balanced && stars > 5 { stars = 5; }
-    Score { stars, code_stars: stars, cov_stars: None, cov_pct: None, pct_moderate: m, pct_high: h, pct_very_high: v }
+    Score { stars, code_stars: stars, cov_stars: None, cov_pct: None, volume_stars: 7, total_loc: 0, pct_moderate: m, pct_high: h, pct_very_high: v }
 }
 
 struct Threshold {
@@ -161,6 +168,17 @@ fn calculate_cov_stars(cov: f32) -> u8 {
     else if cov >= 60.0 { 5 }
     else if cov >= 40.0 { 4 }
     else if cov >= 20.0 { 3 }
+    else { 1 }
+}
+
+#[rustfmt::skip]
+fn calculate_volume_stars(loc: usize) -> u8 {
+    if loc < 10_000 { 7 }
+    else if loc < 30_000 { 6 }
+    else if loc < 75_000 { 5 }
+    else if loc < 150_000 { 4 }
+    else if loc < 300_000 { 3 }
+    else if loc < 600_000 { 2 }
     else { 1 }
 }
 

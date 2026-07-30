@@ -122,6 +122,9 @@ fn print_profile(s: &Score) {
         println!("  Test Coverage: {}", "N/A (No coverage.lcov found)".dimmed());
     }
     
+    let vol_str = format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc);
+    println!("  System Volume: {}", color_stars(s.volume_stars, vol_str));
+    
     println!("  ──────────────────────────────");
     let f_str = format!("{} ({:^1} / 7)", star_string(s.stars), s.stars);
     println!("  Final Score:   {}", color_stars(s.stars, f_str).bold());
@@ -200,6 +203,6 @@ pub fn print_json(res: &AnalysisResult) {
     println!("  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},", res.graph.ignored_externals, h_fan, cycles);
     println!("  \"hotspots\": [{}],", build_hotspots_json(res));
     println!("  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},", res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high);
-    println!("  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"max_stars\":7}}", res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str);
+    println!("  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}", res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
     println!("}}");
 }
