@@ -32,29 +32,13 @@ pub fn load_or_generate_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Cove
     parse_lcov_content(project_dir, &content)
 }
 
+#[rustfmt::skip]
 fn generate_lcov(dir: &Path) -> bool {
-    let version_status = std::process::Command::new("cargo")
-        .args(["llvm-cov", "--version"])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status();
-    if !version_status.is_ok_and(|s| s.success()) {
-        return false;
-    }
-
+    let v_stat = std::process::Command::new("cargo").args(["llvm-cov", "--version"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status();
+    if !v_stat.is_ok_and(|s| s.success()) { return false; }
     use owo_colors::OwoColorize;
-    println!(
-        "{} ⏳ Generating coverage data via cargo-llvm-cov...",
-        "[cargo-sig]".bold().cyan()
-    );
-
-    std::process::Command::new("cargo")
-        .args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"])
-        .current_dir(dir)
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
-        .is_ok_and(|s| s.success())
+    println!("{} ⏳ Generating coverage data via cargo-llvm-cov...", "[cargo-sig]".bold().cyan());
+    std::process::Command::new("cargo").args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"]).current_dir(dir).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().is_ok_and(|s| s.success())
 }
 
 fn parse_lcov_content(dir: &Path, content: &str) -> Option<HashMap<PathBuf, Coverage>> {

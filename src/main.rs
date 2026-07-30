@@ -21,39 +21,20 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[rustfmt::skip]
 fn run_app(args: &SigArgs) -> anyhow::Result<u8> {
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
     let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
-    f.sort();
-    f.dedup();
-    let dup_pct = duplication::calculate_duplication(&f);
+    f.sort(); f.dedup();
+    let dup = duplication::calculate_duplication(&f);
     let graph = coupling::CouplingGraph::build(&dir, &f);
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
     let cov = coverage::load_or_generate_lcov(&dir);
-    let is_balanced = report::is_balanced(&metrics);
-    let ctx = scoring::EvalCtx {
-        metrics: &metrics,
-        dup: dup_pct,
-        bal: is_balanced,
-        graph: &graph,
-        cov: &cov,
-        churns: &churns,
-    };
+    let ctx = scoring::EvalCtx { metrics: &metrics, dup, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
     let score = scoring::evaluate(&ctx);
-    let res = report::AnalysisResult {
-        metrics: &metrics,
-        churns: &churns,
-        cov: &cov,
-        score: &score,
-        dup_pct,
-        graph: &graph,
-    };
-    if args.format == "json" {
-        report::print_json(&res);
-    } else {
-        report::print_all(&res);
-    }
+    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: dup, graph: &graph };
+    if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
     Ok(score.stars)
 }
 
