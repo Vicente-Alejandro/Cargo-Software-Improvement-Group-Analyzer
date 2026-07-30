@@ -1,10 +1,9 @@
 name: CI
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # GitHub Actions are currently disabled to avoid billing issues.
+  # This workflow can only be triggered manually.
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -40,5 +39,5 @@ jobs:
         run: cargo clippy -- -D warnings
 
       - name: Dogfooding (Cargo SIG Validation)
-        # Aseguramos que cargo-sig pase su propio estándar exigente de calidad (> 5 estrellas).
+        # Ensure cargo-sig passes its own stringent quality standard (> 5 stars).
         run: cargo run --release -- sig --fail-below 5
