@@ -73,10 +73,10 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] Integrate Coupling limits into the 1-7 scoring formula.
 
 ## v0.6.2 — Structured Output (`--format json`)
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **JSON export:** serialize the full report — now covering all 6 implemented guidelines plus Churn × Coverage — for CI pipelines and third-party tooling.
-- [ ] **Open decision (resolve before implementing):** `serde_json` was removed during the zero-bloat rewrite. Decide explicitly between a small hand-rolled JSON writer (consistent with project philosophy, but needs correct string/number escaping) versus reintroducing a minimal JSON dependency. Don't default silently either way (we wont add a extern dependency, we will recreate it in RUST).
+- [x] **JSON export:** serialize the full report — now covering all 6 implemented guidelines plus Churn × Coverage — for CI pipelines and third-party tooling.
+- [x] **Open decision (resolve before implementing):** `serde_json` was removed during the zero-bloat rewrite. Decide explicitly between a small hand-rolled JSON writer (consistent with project philosophy, but needs correct string/number escaping) versus reintroducing a minimal JSON dependency. Don't default silently either way (we wont add a extern dependency, we will recreate it in RUST).
 
 ## v0.6.3 — Coverage Sub-score (SIG Guideline 9)
 **Status:** Planned

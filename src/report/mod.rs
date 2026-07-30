@@ -139,3 +139,48 @@ pub fn enforce_gate(stars: u8, fail_below: u8) {
         std::process::exit(1);
     }
 }
+
+fn escape_json(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+#[rustfmt::skip]
+fn build_summary_json(res: &AnalysisResult) -> String {
+    let (mut v, mut i, mut c) = (0, 0, 0);
+    for m in res.metrics {
+        if m.lines_of_code > 15 { v += 1; }
+        if m.parameter_count > 4 { i += 1; }
+        if m.cyclomatic_complexity > 5 { c += 1; }
+    }
+    format!("{{\"total_functions\":{},\"volume_violations\":{},\"interface_violations\":{},\"complexity_violations\":{},\"duplication_pct\":{:.1}}}", res.metrics.len(), v, i, c, res.dup_pct)
+}
+
+#[rustfmt::skip]
+fn build_hotspots_json(res: &AnalysisResult) -> String {
+    let fr = compute_file_risk(res.metrics);
+    let mut hs: Vec<_> = fr.keys().collect();
+    hs.sort_by_key(|k| -( (fr.get(*k).unwrap_or(&0) * res.churns.get(*k).unwrap_or(&0)) as isize ));
+    hs.retain(|k| *fr.get(*k).unwrap_or(&0) > 0 && *res.churns.get(*k).unwrap_or(&0) > 0);
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let js: Vec<String> = hs.iter().take(5).map(|p| {
+        let n = escape_json(&p.strip_prefix(&cwd).unwrap_or(p).display().to_string());
+        let cv = res.cov.as_ref().and_then(|c| c.get(*p)).map(|c| c.percent().to_string()).unwrap_or("null".to_string());
+        format!("{{\"file\":\"{}\",\"risk_points\":{},\"churn_commits\":{},\"coverage_pct\":{}}}", n, fr.get(*p).unwrap_or(&0), res.churns.get(*p).unwrap_or(&0), cv)
+    }).collect();
+    js.join(",")
+}
+
+#[rustfmt::skip]
+pub fn print_json(res: &AnalysisResult) {
+    let bal = is_balanced(res.metrics);
+    let cycles = res.graph.detect_cycles().len();
+    let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
+    println!("{{");
+    println!("  \"summary\": {},", build_summary_json(res));
+    println!("  \"component_balance\": {{\"is_balanced\":{}}},", bal);
+    println!("  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},", res.graph.ignored_externals, h_fan, cycles);
+    println!("  \"hotspots\": [{}],", build_hotspots_json(res));
+    println!("  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},", res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high);
+    println!("  \"rating\": {{\"stars\":{},\"max_stars\":7}}", res.score.stars);
+    println!("}}");
+}

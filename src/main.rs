@@ -13,7 +13,9 @@ use owo_colors::OwoColorize;
 #[rustfmt::skip]
 fn main() -> anyhow::Result<()> {
     let args = parse_args();
-    println!("{} - Running check...", "Cargo SIG".bold().cyan());
+    if args.format != "json" {
+        println!("{} - Running check...", "Cargo SIG".bold().cyan());
+    }
 
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
@@ -28,7 +30,9 @@ fn main() -> anyhow::Result<()> {
     let score = scoring::evaluate(&metrics, dup_pct, is_balanced, &graph);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct, graph: &graph };
     
-    report::print_all(&res);
+    if args.format == "json" { report::print_json(&res); }
+    else { report::print_all(&res); }
+
     report::enforce_gate(score.stars, args.fail_below);
     Ok(())
 }
