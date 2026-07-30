@@ -53,8 +53,8 @@ pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
 #[rustfmt::skip]
 fn print_balance(metrics: &[FunctionMetric]) {
     println!("\n{}", "Component Balance:".bold());
-    if is_balanced(metrics) { println!("  All components are balanced. {}", "✅".green()); }
-    else { println!("  One component exceeds 50% of the codebase. {}", "⚠️".yellow()); }
+    if is_balanced(metrics) { println!("  All components are balanced. ✅"); }
+    else { println!("  One component exceeds 50% of the codebase. ⚠️"); }
 }
 
 #[rustfmt::skip]
@@ -111,13 +111,20 @@ fn print_profile(s: &Score) {
     println!("\n{}", "Risk Profile:".bold());
     println!("Moderate Risk: {:.1}%\nHigh Risk: {:.1}%\nVery High Risk: {:.1}%", s.pct_moderate, s.pct_high, s.pct_very_high);
     println!("\n─────────────────────────────────────");
-    let stars_str = format!("{} ({:^1} / 7)", star_string(s.stars), s.stars);
-    let colored_stars = match s.stars {
-        6..=7 => stars_str.green().to_string(),
-        4..=5 => stars_str.yellow().to_string(),
-        _ => stars_str.red().to_string(),
-    };
-    println!("{}: {}", "Maintainability Rating".bold(), colored_stars);
+    println!("{}", "Maintainability Rating:".bold());
+    let c_str = format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars);
+    println!("  Code Health:   {}", color_stars(s.code_stars, c_str));
+    
+    if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
+        let v_str = format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct);
+        println!("  Test Coverage: {}", color_stars(st, v_str));
+    } else {
+        println!("  Test Coverage: {}", "N/A (No coverage.lcov found)".dimmed());
+    }
+    
+    println!("  ──────────────────────────────");
+    let f_str = format!("{} ({:^1} / 7)", star_string(s.stars), s.stars);
+    println!("  Final Score:   {}", color_stars(s.stars, f_str).bold());
 }
 
 fn star_string(stars: u8) -> String {
@@ -126,6 +133,14 @@ fn star_string(stars: u8) -> String {
         "★".repeat(stars as usize),
         "☆".repeat((7 - stars) as usize)
     )
+}
+
+fn color_stars(stars: u8, text: String) -> String {
+    match stars {
+        6..=7 => text.green().to_string(),
+        4..=5 => text.yellow().to_string(),
+        _ => text.red().to_string(),
+    }
 }
 
 pub fn enforce_gate(stars: u8, fail_below: u8) {
@@ -175,12 +190,16 @@ pub fn print_json(res: &AnalysisResult) {
     let bal = is_balanced(res.metrics);
     let cycles = res.graph.detect_cycles().len();
     let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
+    
+    let cov_stars_str = res.score.cov_stars.map(|s| s.to_string()).unwrap_or("null".to_string());
+    let cov_pct_str = res.score.cov_pct.map(|s| format!("{:.1}", s)).unwrap_or("null".to_string());
+
     println!("{{");
     println!("  \"summary\": {},", build_summary_json(res));
     println!("  \"component_balance\": {{\"is_balanced\":{}}},", bal);
     println!("  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},", res.graph.ignored_externals, h_fan, cycles);
     println!("  \"hotspots\": [{}],", build_hotspots_json(res));
     println!("  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},", res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high);
-    println!("  \"rating\": {{\"stars\":{},\"max_stars\":7}}", res.score.stars);
+    println!("  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"max_stars\":7}}", res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str);
     println!("}}");
 }

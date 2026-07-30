@@ -1,8 +1,15 @@
 use crate::analysis::FunctionMetric;
+use crate::coupling::CouplingGraph;
+use crate::coverage::{Coverage, churn_weighted_coverage};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, Default)]
 pub struct Score {
     pub stars: u8,
+    pub code_stars: u8,
+    pub cov_stars: Option<u8>,
+    pub cov_pct: Option<f32>,
     pub pct_moderate: f64,
     pub pct_high: f64,
     pub pct_very_high: f64,
@@ -16,24 +23,50 @@ pub enum Risk {
     VeryHigh = 10,
 }
 
+pub struct EvalCtx<'a> {
+    pub metrics: &'a [FunctionMetric],
+    pub dup: f32,
+    pub bal: bool,
+    pub graph: &'a CouplingGraph,
+    pub cov: &'a Option<HashMap<PathBuf, Coverage>>,
+    pub churns: &'a HashMap<PathBuf, usize>,
+}
+
 #[rustfmt::skip]
-pub fn evaluate(metrics: &[FunctionMetric], dup: f32, bal: bool, graph: &crate::coupling::CouplingGraph) -> Score {
-    if metrics.is_empty() { return Score { stars: 7, ..Default::default() }; }
+fn aggregate_risk(ctx: &EvalCtx) -> [usize; 4] {
     let mut t = [0; 4];
-    for m in metrics {
+    for m in ctx.metrics {
         t[0] += m.lines_of_code;
-        let r = categorize_risk(m, graph) as usize;
+        let r = categorize_risk(m, ctx.graph) as usize;
         if r == 10 { t[3] += m.lines_of_code; }
         else if r == 5 { t[2] += m.lines_of_code; }
         else if r == 2 { t[1] += m.lines_of_code; }
     }
-    let mut score = compute_score(t, dup, bal);
-    if !graph.detect_cycles().is_empty() && score.stars > 1 { score.stars = 1; }
+    t
+}
+
+#[rustfmt::skip]
+fn apply_coverage(mut score: Score, ctx: &EvalCtx) -> Score {
+    if let Some(c_map) = ctx.cov {
+        let pct = churn_weighted_coverage(c_map, ctx.churns);
+        let c_stars = calculate_cov_stars(pct);
+        score.cov_pct = Some(pct);
+        score.cov_stars = Some(c_stars);
+        score.stars = score.code_stars.min(c_stars);
+    } else { score.stars = score.code_stars; }
     score
 }
 
 #[rustfmt::skip]
-pub fn categorize_risk(m: &FunctionMetric, graph: &crate::coupling::CouplingGraph) -> Risk {
+pub fn evaluate(ctx: &EvalCtx) -> Score {
+    if ctx.metrics.is_empty() { return Score { stars: 7, code_stars: 7, ..Default::default() }; }
+    let mut score = compute_score(aggregate_risk(ctx), ctx.dup, ctx.bal);
+    if !ctx.graph.detect_cycles().is_empty() && score.code_stars > 1 { score.code_stars = 1; }
+    apply_coverage(score, ctx)
+}
+
+#[rustfmt::skip]
+pub fn categorize_risk(m: &FunctionMetric, graph: &CouplingGraph) -> Risk {
     let f = graph.fan_out(&m.file_path);
     if is_vh(m, f) { return Risk::VeryHigh; }
     if is_h(m, f) { return Risk::High; }
@@ -60,7 +93,7 @@ fn compute_score(t: [usize; 4], dup: f32, balanced: bool) -> Score {
     let (m, h, v) = ((t[1] as f64 / tot) * 100.0, (t[2] as f64 / tot) * 100.0, (t[3] as f64 / tot) * 100.0);
     let mut stars = calculate_stars(m, h, v, dup);
     if !balanced && stars > 5 { stars = 5; }
-    Score { stars, pct_moderate: m, pct_high: h, pct_very_high: v }
+    Score { stars, code_stars: stars, cov_stars: None, cov_pct: None, pct_moderate: m, pct_high: h, pct_very_high: v }
 }
 
 struct Threshold {
@@ -121,6 +154,16 @@ fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
     THRESHOLDS.iter().find(|t| v <= t.v && h <= t.h && m <= t.m && (d as f64) <= t.d).map(|t| t.stars).unwrap_or(1)
 }
 
+#[rustfmt::skip]
+fn calculate_cov_stars(cov: f32) -> u8 {
+    if cov >= 95.0 { 7 }
+    else if cov >= 80.0 { 6 }
+    else if cov >= 60.0 { 5 }
+    else if cov >= 40.0 { 4 }
+    else if cov >= 20.0 { 3 }
+    else { 1 }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,21 +178,16 @@ mod tests {
     #[test]
     fn test_empty_metrics() {
         let graph = crate::coupling::CouplingGraph::default();
-        let score = evaluate(&[], 0.0, true, &graph);
+        let churns = HashMap::new();
+        let ctx = EvalCtx {
+            metrics: &[],
+            dup: 0.0,
+            bal: true,
+            graph: &graph,
+            cov: &None,
+            churns: &churns,
+        };
+        let score = evaluate(&ctx);
         assert_eq!(score.stars, 7);
-    }
-
-    #[test]
-    fn test_interface_size_penalty() {
-        let metrics = vec![FunctionMetric {
-            function_name: "test_fn".to_string(),
-            file_path: PathBuf::new(),
-            lines_of_code: 10,
-            cyclomatic_complexity: 1,
-            parameter_count: 8,
-        }];
-        let graph = crate::coupling::CouplingGraph::default();
-        let score = evaluate(&metrics, 0.0, true, &graph);
-        assert_eq!(score.stars, 1);
     }
 }

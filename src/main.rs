@@ -27,7 +27,15 @@ fn main() -> anyhow::Result<()> {
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
     let cov = coverage::read_lcov(&dir);
     let is_balanced = report::is_balanced(&metrics);
-    let score = scoring::evaluate(&metrics, dup_pct, is_balanced, &graph);
+    let ctx = scoring::EvalCtx {
+        metrics: &metrics,
+        dup: dup_pct,
+        bal: is_balanced,
+        graph: &graph,
+        cov: &cov,
+        churns: &churns,
+    };
+    let score = scoring::evaluate(&ctx);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct, graph: &graph };
     
     if args.format == "json" { report::print_json(&res); }

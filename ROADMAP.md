@@ -79,10 +79,10 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Open decision (resolve before implementing):** `serde_json` was removed during the zero-bloat rewrite. Decide explicitly between a small hand-rolled JSON writer (consistent with project philosophy, but needs correct string/number escaping) versus reintroducing a minimal JSON dependency. Don't default silently either way (we wont add a extern dependency, we will recreate it in RUST).
 
 ## v0.6.3 — Coverage Sub-score (SIG Guideline 9)
-**Status:** Planned
+**Status:** Completed
 
-- [ ] **Standalone metric:** expose overall test coverage % as its own scored dimension. Today it only exists inside the Churn × Coverage cross-reference, not as a guideline in its own right.
-- [ ] **Scoring integration:** wire it into the star math alongside the other guidelines.
+- [x] **Standalone metric:** expose overall test coverage % as its own scored dimension. Today it only exists inside the Churn × Coverage cross-reference, not as a guideline in its own right.
+- [x] **Scoring integration:** wire it into the star math alongside the other guidelines.
 
 ## v0.6.4 — Codebase Size Guideline (SIG Guideline 8)
 **Status:** Planned

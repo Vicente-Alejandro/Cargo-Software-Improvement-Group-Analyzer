@@ -61,3 +61,18 @@ fn parse_da_line(da: &str, path: &Path, map: &mut HashMap<PathBuf, Coverage>) {
         }
     }
 }
+
+#[rustfmt::skip]
+pub fn churn_weighted_coverage(cov: &HashMap<PathBuf, Coverage>, churns: &HashMap<PathBuf, usize>) -> f32 {
+    let (mut total_churn, mut weighted_cov) = (0, 0.0);
+    for (path, file_cov) in cov {
+        let fc = churns.get(path).copied().unwrap_or(0);
+        if fc > 0 { total_churn += fc; weighted_cov += file_cov.percent() * (fc as f32); }
+    }
+    if total_churn == 0 {
+        let (mut t_hit, mut t_tot) = (0, 0);
+        for c in cov.values() { t_hit += c.hit; t_tot += c.total; }
+        return if t_tot == 0 { 100.0 } else { (t_hit as f32 / t_tot as f32) * 100.0 };
+    }
+    weighted_cov / (total_churn as f32)
+}
