@@ -30,7 +30,7 @@ fn run_app(args: &SigArgs) -> anyhow::Result<u8> {
     let dup = duplication::calculate_duplication(&f);
     let graph = coupling::CouplingGraph::build(&dir, &f);
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
-    let cov = coverage::load_or_generate_lcov(&dir);
+    let cov = coverage::load_or_generate_lcov(&dir, args.no_auto_cov);
     let ctx = scoring::EvalCtx { metrics: &metrics, dup, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
     let score = scoring::evaluate(&ctx);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: dup, graph: &graph };

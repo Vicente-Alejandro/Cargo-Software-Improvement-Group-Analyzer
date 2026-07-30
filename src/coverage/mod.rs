@@ -18,13 +18,16 @@ impl Coverage {
     }
 }
 
-pub fn load_or_generate_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Coverage>> {
+pub fn load_or_generate_lcov(
+    project_dir: &Path,
+    skip_auto: bool,
+) -> Option<HashMap<PathBuf, Coverage>> {
     let lcov_path = project_dir.join("coverage.lcov");
     if let Ok(content) = fs::read_to_string(&lcov_path) {
         return parse_lcov_content(project_dir, &content);
     }
 
-    if !generate_lcov(project_dir) {
+    if skip_auto || !generate_lcov(project_dir) {
         return None;
     }
 
