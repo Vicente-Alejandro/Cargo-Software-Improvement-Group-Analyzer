@@ -163,23 +163,14 @@ fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
 
 #[rustfmt::skip]
 fn calculate_cov_stars(cov: f32) -> u8 {
-    if cov >= 95.0 { 7 }
-    else if cov >= 80.0 { 6 }
-    else if cov >= 60.0 { 5 }
-    else if cov >= 40.0 { 4 }
-    else if cov >= 20.0 { 3 }
-    else { 1 }
+    let th = [(95.0, 7), (80.0, 6), (60.0, 5), (40.0, 4), (20.0, 3)];
+    th.iter().find(|(t, _)| cov >= *t).map(|(_, s)| *s).unwrap_or(1)
 }
 
 #[rustfmt::skip]
 fn calculate_volume_stars(loc: usize) -> u8 {
-    if loc < 10_000 { 7 }
-    else if loc < 30_000 { 6 }
-    else if loc < 75_000 { 5 }
-    else if loc < 150_000 { 4 }
-    else if loc < 300_000 { 3 }
-    else if loc < 600_000 { 2 }
-    else { 1 }
+    let th = [(10_000, 7), (30_000, 6), (75_000, 5), (150_000, 4), (300_000, 3), (600_000, 2)];
+    th.iter().find(|(t, _)| loc < *t).map(|(_, s)| *s).unwrap_or(1)
 }
 
 #[cfg(test)]

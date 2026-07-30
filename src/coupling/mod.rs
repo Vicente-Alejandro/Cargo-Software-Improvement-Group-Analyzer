@@ -76,7 +76,7 @@ fn parse_file_deps(f: &Path, m: &HashMap<String, PathBuf>) -> (HashSet<PathBuf>,
 
 #[rustfmt::skip]
 fn parse_use(p: &str, f: &Path, m: &HashMap<String, PathBuf>) -> Option<(Option<PathBuf>, usize)> {
-    let cp = p.split_whitespace().next().unwrap_or(p).trim_matches(|c| c == '{' || c == '}' || c == ';');
+    let cp = p.split_whitespace().next().unwrap_or(p).trim_matches(&['{', '}', ';'][..]);
     if let Some(rem) = cp.strip_prefix("crate::") {
         let mod_name = rem.split("::").next().unwrap_or(rem);
         let t = m.get(mod_name)?;

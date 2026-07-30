@@ -24,15 +24,22 @@ pub fn load_or_generate_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Cove
         return parse_lcov_content(project_dir, &content);
     }
 
-    // Check if cargo-llvm-cov is installed
+    if !generate_lcov(project_dir) {
+        return None;
+    }
+
+    let content = fs::read_to_string(&lcov_path).ok()?;
+    parse_lcov_content(project_dir, &content)
+}
+
+fn generate_lcov(dir: &Path) -> bool {
     let version_status = std::process::Command::new("cargo")
         .args(["llvm-cov", "--version"])
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .status();
-
     if !version_status.is_ok_and(|s| s.success()) {
-        return None; // Not installed
+        return false;
     }
 
     use owo_colors::OwoColorize;
@@ -41,20 +48,13 @@ pub fn load_or_generate_lcov(project_dir: &Path) -> Option<HashMap<PathBuf, Cove
         "[cargo-sig]".bold().cyan()
     );
 
-    let status = std::process::Command::new("cargo")
+    std::process::Command::new("cargo")
         .args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"])
-        .current_dir(project_dir)
+        .current_dir(dir)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .status()
-        .ok()?;
-
-    if !status.success() {
-        return None;
-    }
-
-    let content = fs::read_to_string(&lcov_path).ok()?;
-    parse_lcov_content(project_dir, &content)
+        .is_ok_and(|s| s.success())
 }
 
 fn parse_lcov_content(dir: &Path, content: &str) -> Option<HashMap<PathBuf, Coverage>> {
@@ -97,15 +97,13 @@ fn parse_da_line(da: &str, path: &Path, map: &mut HashMap<PathBuf, Coverage>) {
 
 #[rustfmt::skip]
 pub fn churn_weighted_coverage(cov: &HashMap<PathBuf, Coverage>, churns: &HashMap<PathBuf, usize>) -> f32 {
-    let (mut total_churn, mut weighted_cov) = (0, 0.0);
+    let (mut tc, mut wc) = (0, 0.0);
     for (path, file_cov) in cov {
         let fc = churns.get(path).copied().unwrap_or(0);
-        if fc > 0 { total_churn += fc; weighted_cov += file_cov.percent() * (fc as f32); }
+        if fc > 0 { tc += fc; wc += file_cov.percent() * (fc as f32); }
     }
-    if total_churn == 0 {
-        let (mut t_hit, mut t_tot) = (0, 0);
-        for c in cov.values() { t_hit += c.hit; t_tot += c.total; }
-        return if t_tot == 0 { 100.0 } else { (t_hit as f32 / t_tot as f32) * 100.0 };
-    }
-    weighted_cov / (total_churn as f32)
+    if tc > 0 { return wc / (tc as f32); }
+    let t_tot: usize = cov.values().map(|c| c.total).sum();
+    let t_hit: usize = cov.values().map(|c| c.hit).sum();
+    if t_tot == 0 { 100.0 } else { (t_hit as f32 / t_tot as f32) * 100.0 }
 }

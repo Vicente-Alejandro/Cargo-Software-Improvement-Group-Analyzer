@@ -16,12 +16,17 @@ fn main() -> anyhow::Result<()> {
     if args.format != "json" {
         println!("{} - Running check...", "Cargo SIG".bold().cyan());
     }
+    let res_score = run_app(&args)?;
+    report::enforce_gate(res_score, args.fail_below);
+    Ok(())
+}
 
+fn run_app(args: &SigArgs) -> anyhow::Result<u8> {
     let dir = std::env::current_dir()?;
     let metrics = analysis::run_analysis(&dir)?;
     let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
-    f.sort(); f.dedup();
-    
+    f.sort();
+    f.dedup();
     let dup_pct = duplication::calculate_duplication(&f);
     let graph = coupling::CouplingGraph::build(&dir, &f);
     let churns = churn::get_frequencies(&dir).unwrap_or_default();
@@ -36,13 +41,20 @@ fn main() -> anyhow::Result<()> {
         churns: &churns,
     };
     let score = scoring::evaluate(&ctx);
-    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct, graph: &graph };
-    
-    if args.format == "json" { report::print_json(&res); }
-    else { report::print_all(&res); }
-
-    report::enforce_gate(score.stars, args.fail_below);
-    Ok(())
+    let res = report::AnalysisResult {
+        metrics: &metrics,
+        churns: &churns,
+        cov: &cov,
+        score: &score,
+        dup_pct,
+        graph: &graph,
+    };
+    if args.format == "json" {
+        report::print_json(&res);
+    } else {
+        report::print_all(&res);
+    }
+    Ok(score.stars)
 }
 
 #[rustfmt::skip]

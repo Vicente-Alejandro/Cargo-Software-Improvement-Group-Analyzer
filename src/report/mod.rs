@@ -108,26 +108,13 @@ fn print_hotspot_item(i: usize, p: &PathBuf, fr: &HashMap<PathBuf, usize>, res: 
 
 #[rustfmt::skip]
 fn print_profile(s: &Score) {
-    println!("\n{}", "Risk Profile:".bold());
-    println!("Moderate Risk: {:.1}%\nHigh Risk: {:.1}%\nVery High Risk: {:.1}%", s.pct_moderate, s.pct_high, s.pct_very_high);
-    println!("\n─────────────────────────────────────");
-    println!("{}", "Maintainability Rating:".bold());
-    let c_str = format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars);
-    println!("  Code Health:   {}", color_stars(s.code_stars, c_str));
-    
+    println!("\n{}\nModerate Risk: {:.1}%\nHigh Risk: {:.1}%\nVery High Risk: {:.1}%\n\n─────────────────────────────────────\n{}", "Risk Profile:".bold(), s.pct_moderate, s.pct_high, s.pct_very_high, "Maintainability Rating:".bold());
+    println!("  Code Health:   {}", color_stars(s.code_stars, format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars)));
     if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
-        let v_str = format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct);
-        println!("  Test Coverage: {}", color_stars(st, v_str));
-    } else {
-        println!("  Test Coverage: {}", "N/A (Run 'cargo install cargo-llvm-cov' to enable)".dimmed());
-    }
-    
-    let vol_str = format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc);
-    println!("  System Volume: {}", color_stars(s.volume_stars, vol_str));
-    
-    println!("  ──────────────────────────────");
-    let f_str = format!("{} ({:^1} / 7)", star_string(s.stars), s.stars);
-    println!("  Final Score:   {}", color_stars(s.stars, f_str).bold());
+        println!("  Test Coverage: {}", color_stars(st, format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct)));
+    } else { println!("  Test Coverage: {}", "N/A (Run 'cargo install cargo-llvm-cov' to enable)".dimmed()); }
+    println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
+    println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
 }
 
 fn star_string(stars: u8) -> String {
@@ -191,18 +178,10 @@ fn build_hotspots_json(res: &AnalysisResult) -> String {
 #[rustfmt::skip]
 pub fn print_json(res: &AnalysisResult) {
     let bal = is_balanced(res.metrics);
+    let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 15).count();
     let cycles = res.graph.detect_cycles().len();
-    let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
-    
-    let cov_stars_str = res.score.cov_stars.map(|s| s.to_string()).unwrap_or("null".to_string());
-    let cov_pct_str = res.score.cov_pct.map(|s| format!("{:.1}", s)).unwrap_or("null".to_string());
-
-    println!("{{");
-    println!("  \"summary\": {},", build_summary_json(res));
-    println!("  \"component_balance\": {{\"is_balanced\":{}}},", bal);
-    println!("  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},", res.graph.ignored_externals, h_fan, cycles);
-    println!("  \"hotspots\": [{}],", build_hotspots_json(res));
-    println!("  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},", res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high);
-    println!("  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}", res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
-    println!("}}");
+    let cov_stars_str = res.score.cov_stars.map_or("null".to_string(), |s| s.to_string());
+    let cov_pct_str = res.score.cov_pct.map_or("null".to_string(), |p| format!("{:.1}", p));
+    println!("{{\n  \"summary\": {},\n  \"component_balance\": {{\"is_balanced\":{}}},\n  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},\n  \"hotspots\": [{}],\n  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},\n  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}\n}}", 
+        build_summary_json(res), bal, res.graph.ignored_externals, h_fan, cycles, build_hotspots_json(res), res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high, res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
 }
