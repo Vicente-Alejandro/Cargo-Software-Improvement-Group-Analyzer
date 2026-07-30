@@ -112,7 +112,7 @@ fn print_profile(s: &Score) {
     println!("  Code Health:   {}", color_stars(s.code_stars, format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars)));
     if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
         println!("  Test Coverage: {}", color_stars(st, format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct)));
-    } else { println!("  Test Coverage: {}", "N/A (No coverage data. Run with auto-cov or install cargo-llvm-cov)".dimmed()); }
+    } else { println!("  Test Coverage: {}", "N/A (No coverage data. Run 'cargo sig -a' to auto-generate)".dimmed()); }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
 }
