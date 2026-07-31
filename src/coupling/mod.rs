@@ -122,4 +122,67 @@ mod tests {
         assert_eq!(cycles.len(), 1);
         assert_eq!(cycles[0].len(), 3);
     }
+
+    #[test]
+    fn test_file_to_mod_name() {
+        let base = PathBuf::from("my_project");
+        let f1 = base.join("src").join("main.rs");
+        assert_eq!(file_to_mod_name(&base, &f1), Some("crate".to_string()));
+
+        let f2 = base.join("src").join("analysis").join("mod.rs");
+        assert_eq!(file_to_mod_name(&base, &f2), Some("analysis".to_string()));
+
+        let f3 = base.join("src").join("cli.rs");
+        assert_eq!(file_to_mod_name(&base, &f3), Some("cli".to_string()));
+    }
+
+    #[test]
+    fn test_parse_use() {
+        let mut m = HashMap::new();
+        m.insert("analysis".to_string(), PathBuf::from("src/analysis/mod.rs"));
+        m.insert("crate".to_string(), PathBuf::from("src/main.rs"));
+        let f = PathBuf::from("src/main.rs");
+
+        // Internal dep
+        let (dep, ig) = parse_use("crate::analysis::run;", &f, &m).unwrap();
+        assert_eq!(dep, Some(PathBuf::from("src/analysis/mod.rs")));
+        assert_eq!(ig, 0);
+
+        // Self referential
+        let res = parse_use("crate::main::something", &f, &m);
+        assert!(res.is_none());
+
+        // External dep
+        let (dep, ig) = parse_use("std::collections::HashMap;", &f, &m).unwrap();
+        assert!(dep.is_none());
+        assert_eq!(ig, 1);
+
+        // super or self
+        assert!(parse_use("super::foo", &f, &m).is_none());
+        assert!(parse_use("self::foo", &f, &m).is_none());
+    }
+
+    #[test]
+    fn test_build_and_fan_out() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src");
+        std::fs::create_dir(&src).unwrap();
+        
+        let a_rs = src.join("a.rs");
+        std::fs::write(&a_rs, "use crate::b;\nuse std::fs;").unwrap();
+        
+        let b_rs = src.join("b.rs");
+        std::fs::write(&b_rs, "use crate::a;").unwrap();
+        
+        let files = vec![a_rs.clone(), b_rs.clone()];
+        let graph = CouplingGraph::build(dir.path(), &files);
+        
+        assert_eq!(graph.ignored_externals, 1);
+        assert_eq!(graph.fan_out(&a_rs), 1);
+        assert_eq!(graph.fan_out(&b_rs), 1);
+        assert_eq!(graph.fan_out(&PathBuf::from("nonexistent")), 0);
+        
+        let cycles = graph.detect_cycles();
+        assert_eq!(cycles.len(), 1);
+    }
 }
