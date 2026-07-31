@@ -16,14 +16,14 @@ fn main() -> anyhow::Result<()> {
     if args.format != "json" {
         println!("{} - Running check...", "Cargo SIG".bold().cyan());
     }
-    let res_score = run_app(&args)?;
+    let dir = std::env::current_dir()?;
+    let res_score = run_app(&args, &dir)?;
     report::enforce_gate(res_score, args.fail_below);
     Ok(())
 }
 
 #[rustfmt::skip]
-fn run_app(args: &SigArgs) -> anyhow::Result<u8> {
-    let dir = std::env::current_dir()?;
+fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let metrics = analysis::run_analysis(&dir)?;
     let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
     f.sort(); f.dedup();
@@ -43,4 +43,24 @@ fn parse_args() -> SigArgs {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
     if !args.is_empty() && args[0] == "sig" { args.remove(0); }
     SigArgs::parse(args.into_iter())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::fs::File;
+    use std::io::Write;
+
+    #[test]
+    fn test_run_app() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("main.rs");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "fn main() {{}}").unwrap();
+        
+        let args = SigArgs { fail_below: 0, format: "terminal".to_string(), auto_cov: false };
+        let stars = run_app(&args, dir.path()).unwrap();
+        assert_eq!(stars, 5); // 5 stars because it's unbalanced (1 file = 100%)
+    }
 }
