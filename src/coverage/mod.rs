@@ -162,4 +162,11 @@ mod tests {
         let map = load_or_generate_lcov(dir.path(), true);
         assert!(map.is_none());
     }
+
+    #[test]
+    fn test_generate_lcov() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = generate_lcov(dir.path());
+        assert_eq!(result, false);
+    }
 }

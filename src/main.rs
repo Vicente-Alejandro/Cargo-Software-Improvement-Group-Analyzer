@@ -63,4 +63,16 @@ mod tests {
         let stars = run_app(&args, dir.path()).unwrap();
         assert_eq!(stars, 5); // 5 stars because it's unbalanced (1 file = 100%)
     }
+
+    #[test]
+    fn test_parse_args() {
+        let _ = parse_args();
+    }
+
+    #[test]
+    fn test_main() {
+        // Just run main. It will parse test runner args, run analysis on current dir, and return Ok
+        let res = main();
+        assert!(res.is_ok());
+    }
 }

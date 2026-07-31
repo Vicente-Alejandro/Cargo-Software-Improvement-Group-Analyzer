@@ -230,4 +230,50 @@ mod tests {
         let json = build_summary_json(&res);
         assert_eq!(json, "{\"total_functions\":1,\"volume_violations\":1,\"interface_violations\":1,\"complexity_violations\":1,\"duplication_pct\":1.5}");
     }
+
+    #[test]
+    fn test_print_all_and_json() {
+        let metrics = vec![
+            FunctionMetric { file_path: PathBuf::from("a.rs"), function_name: "f1".into(), lines_of_code: 20, parameter_count: 5, cyclomatic_complexity: 6 },
+        ];
+        let graph = crate::coupling::CouplingGraph::default();
+        let churns = HashMap::new();
+        let cov = None;
+        let score = Score { code_stars: 1, cov_stars: None, cov_pct: None, volume_stars: 1, stars: 1, pct_moderate: 0.0, pct_high: 0.0, pct_very_high: 0.0, total_loc: 20 };
+        let res = AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: 1.5, graph: &graph };
+        
+        print_all(&res);
+        print_json(&res);
+    }
+    
+    #[test]
+    fn test_enforce_gate_pass() {
+        enforce_gate(5, 4);
+    }
+
+    #[test]
+    fn test_print_hotspots_with_data() {
+        let metrics = vec![
+            FunctionMetric { file_path: PathBuf::from("a.rs"), function_name: "f1".into(), lines_of_code: 70, parameter_count: 8, cyclomatic_complexity: 30 },
+        ];
+        let mut edges = HashMap::new();
+        edges.insert(PathBuf::from("a.rs"), std::collections::HashSet::new());
+        let graph = crate::coupling::CouplingGraph { edges, ignored_externals: 0 };
+        let mut churns = HashMap::new();
+        churns.insert(PathBuf::from("a.rs"), 5);
+        let mut cov_map = HashMap::new();
+        cov_map.insert(PathBuf::from("a.rs"), Coverage { hit: 5, total: 10 });
+        let cov = Some(cov_map);
+        let score = Score { code_stars: 1, cov_stars: Some(4), cov_pct: Some(50.0), volume_stars: 1, stars: 1, pct_moderate: 0.0, pct_high: 0.0, pct_very_high: 0.0, total_loc: 20 };
+        let res = AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: 0.0, graph: &graph };
+        
+        print_hotspots(&res);
+        print_profile(&res.score);
+        
+        let json = build_hotspots_json(&res);
+        assert!(json.contains("risk_points"));
+        
+        // Call print_json with Some(cov) to cover those lines
+        print_json(&res);
+    }
 }

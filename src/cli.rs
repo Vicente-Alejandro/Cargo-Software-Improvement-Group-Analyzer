@@ -69,8 +69,13 @@ mod tests {
     #[test]
     fn test_parse_format() {
         let args = vec!["--format".to_string(), "json".to_string()];
-        let sig = SigArgs::parse(args.into_iter());
-        assert_eq!(sig.format, "json");
+        let parsed = SigArgs::parse(args.into_iter());
+        assert_eq!(parsed.format, "json");
+    }
+
+    #[test]
+    fn test_print_help() {
+        SigArgs::print_help();
     }
 
     #[test]
