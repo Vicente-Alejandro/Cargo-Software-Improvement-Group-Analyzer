@@ -176,7 +176,6 @@ fn calculate_volume_stars(loc: usize) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_perfect_score() {
