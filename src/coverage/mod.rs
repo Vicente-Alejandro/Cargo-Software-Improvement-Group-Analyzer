@@ -114,9 +114,9 @@ pub fn churn_weighted_coverage(cov: &HashMap<PathBuf, Coverage>, churns: &HashMa
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
     use std::fs::File;
     use std::io::Write;
+    use tempfile::tempdir;
 
     #[test]
     fn test_coverage_percent() {
@@ -131,7 +131,10 @@ mod tests {
         let content = "TN:\nSF:src/main.rs\nDA:1,1\nDA:2,0\nend_of_record\n";
         let dir = PathBuf::from(".");
         let map = parse_lcov_content(&dir, content).unwrap();
-        let path = dir.join("src/main.rs").canonicalize().unwrap_or(dir.join("src/main.rs"));
+        let path = dir
+            .join("src/main.rs")
+            .canonicalize()
+            .unwrap_or(dir.join("src/main.rs"));
         let cov = map.get(&path).unwrap();
         assert_eq!(cov.total, 2);
         assert_eq!(cov.hit, 1);

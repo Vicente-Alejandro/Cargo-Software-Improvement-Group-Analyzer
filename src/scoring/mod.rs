@@ -224,16 +224,40 @@ mod tests {
     #[test]
     fn test_categorize_risk() {
         let graph = CouplingGraph::default();
-        let m_low = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 10, parameter_count: 2, cyclomatic_complexity: 2 };
+        let m_low = FunctionMetric {
+            file_path: PathBuf::new(),
+            function_name: String::new(),
+            lines_of_code: 10,
+            parameter_count: 2,
+            cyclomatic_complexity: 2,
+        };
         assert!(matches!(categorize_risk(&m_low, &graph), Risk::Low));
-        
-        let m_mod = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 20, parameter_count: 2, cyclomatic_complexity: 2 };
+
+        let m_mod = FunctionMetric {
+            file_path: PathBuf::new(),
+            function_name: String::new(),
+            lines_of_code: 20,
+            parameter_count: 2,
+            cyclomatic_complexity: 2,
+        };
         assert!(matches!(categorize_risk(&m_mod, &graph), Risk::Moderate));
 
-        let m_high = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 40, parameter_count: 2, cyclomatic_complexity: 2 };
+        let m_high = FunctionMetric {
+            file_path: PathBuf::new(),
+            function_name: String::new(),
+            lines_of_code: 40,
+            parameter_count: 2,
+            cyclomatic_complexity: 2,
+        };
         assert!(matches!(categorize_risk(&m_high, &graph), Risk::High));
 
-        let m_vh = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 70, parameter_count: 2, cyclomatic_complexity: 2 };
+        let m_vh = FunctionMetric {
+            file_path: PathBuf::new(),
+            function_name: String::new(),
+            lines_of_code: 70,
+            parameter_count: 2,
+            cyclomatic_complexity: 2,
+        };
         assert!(matches!(categorize_risk(&m_vh, &graph), Risk::VeryHigh));
     }
 
@@ -249,8 +273,14 @@ mod tests {
     #[test]
     fn test_evaluate() {
         let graph = CouplingGraph::default();
-        let m1 = FunctionMetric { file_path: PathBuf::from("a.rs"), function_name: String::new(), lines_of_code: 10, parameter_count: 2, cyclomatic_complexity: 2 };
-        
+        let m1 = FunctionMetric {
+            file_path: PathBuf::from("a.rs"),
+            function_name: String::new(),
+            lines_of_code: 10,
+            parameter_count: 2,
+            cyclomatic_complexity: 2,
+        };
+
         let churns = HashMap::new();
         let mut cov_map = HashMap::new();
         cov_map.insert(PathBuf::from("a.rs"), Coverage { hit: 1, total: 2 });

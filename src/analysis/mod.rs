@@ -68,9 +68,9 @@ fn is_valid_dir(path: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
     use std::fs::File;
     use std::io::Write;
+    use tempfile::tempdir;
 
     #[test]
     fn test_is_valid_dir() {
@@ -85,13 +85,13 @@ mod tests {
         let file_path = dir.path().join("test.rs");
         let mut file = File::create(&file_path).unwrap();
         writeln!(file, "fn test() {{}}").unwrap();
-        
+
         let sub_dir = dir.path().join("sub");
         std::fs::create_dir(&sub_dir).unwrap();
         let sub_file = sub_dir.join("sub_test.rs");
         let mut file2 = File::create(&sub_file).unwrap();
         writeln!(file2, "fn sub_test() {{}}").unwrap();
-        
+
         let git_dir = dir.path().join(".git");
         std::fs::create_dir(&git_dir).unwrap();
         let git_file = git_dir.join("ignore.rs");
@@ -100,7 +100,7 @@ mod tests {
 
         let mut files = Vec::new();
         gather_files(dir.path(), &mut files).unwrap();
-        
+
         assert_eq!(files.len(), 2);
     }
 

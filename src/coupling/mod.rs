@@ -167,21 +167,21 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("src");
         std::fs::create_dir(&src).unwrap();
-        
+
         let a_rs = src.join("a.rs");
         std::fs::write(&a_rs, "use crate::b;\nuse std::fs;").unwrap();
-        
+
         let b_rs = src.join("b.rs");
         std::fs::write(&b_rs, "use crate::a;").unwrap();
-        
+
         let files = vec![a_rs.clone(), b_rs.clone()];
         let graph = CouplingGraph::build(dir.path(), &files);
-        
+
         assert_eq!(graph.ignored_externals, 1);
         assert_eq!(graph.fan_out(&a_rs), 1);
         assert_eq!(graph.fan_out(&b_rs), 1);
         assert_eq!(graph.fan_out(&PathBuf::from("nonexistent")), 0);
-        
+
         let cycles = graph.detect_cycles();
         assert_eq!(cycles.len(), 1);
     }

@@ -1,0 +1,14 @@
+# Changelog
+
+## [0.7.1] - 2026-07-30
+
+### Fixed
+- Fixed `clippy::needless_borrow` warnings in `src/main.rs`.
+- Enforced code formatting with `cargo fmt`.
+
+## [0.7.0] - 2026-07-30
+
+### Added
+- Integrated test coverage generation directly into `cargo sig -a`.
+- Added simulated progress indicator during coverage generation.
+- Re-architected system limits and tests, recovering 97.2% overall test coverage and 7/7 stars code health score.

@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.7.0`
+**Current version:** `0.7.1`
 
 </div>
 

@@ -60,7 +60,7 @@ mod tests {
         let args = vec!["--fail-below".to_string(), "5".to_string()];
         let sig = SigArgs::parse(args.into_iter());
         assert_eq!(sig.fail_below, 5);
-        
+
         let args_err = vec!["--fail-below".to_string(), "invalid".to_string()];
         let sig_err = SigArgs::parse(args_err.into_iter());
         assert_eq!(sig_err.fail_below, 0);
