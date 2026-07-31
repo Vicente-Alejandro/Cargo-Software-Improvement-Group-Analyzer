@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `0.8.1`
+**Current version:** `0.8.2`
 
 </div>
 
@@ -84,7 +84,9 @@ Static analysis for Rust today means either a fast linter (`clippy`) that checks
 
 - **A published, non-arbitrary model.** Ratings are computed against SIG's [10 Guidelines for Maintainable Software](https://www.softwareimprovementgroup.com/) — the same guidelines behind Better Code Hub — not an invented scoring formula.
 - **Churn-aware prioritization.** Complexity alone doesn't tell you what to refactor first. Crossing it with how often a file actually changes (via Git history) surfaces the handful of files doing the most damage — the "hotspots" from Adam Tornhill's *Your Code as a Crime Scene*.
-- **Native AST parsing.** Built directly on [`tree-sitter`](https://tree-sitter.github.io/tree-sitter/) with the official Rust grammar — no external metrics service, no Node.js runtime.
+- **Native AST parsing.** Built directly on [`tree-sitter`](https://tree-sitter.github.io/tree-sitter/) with the official Rust grammar — no external metrics service, no Node.js runtime. Protected against stack overflows with fuzz-proof AST recursion bounds.
+- **High-Performance Architecture.** Uses `rayon` to parallelize file ingestion and AST parsing across all available CPU cores, making it ultra-fast even on massive monorepos.
+- **Enterprise-Grade Quality.** The engine itself enforces rigorous code quality standards, compiling cleanly under `#![warn(clippy::pedantic)]` and strict SIG guidelines.
 - **CI-ready by design.** Fail a build the moment a project's rating drops below a threshold you set.
 
 ---
