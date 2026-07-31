@@ -65,11 +65,11 @@ fn print_coupling(res: &AnalysisResult) {
     if h_fan > 0 { println!("  Fan-Out > 5: {} modules {}", h_fan, "⚠️".yellow()); }
     else { println!("  Fan-Out is healthy across all modules. {}", "✅".green()); }
     let cycles = res.graph.detect_cycles();
-    if !cycles.is_empty() {
+    if cycles.is_empty() { println!("  No Circular Dependencies. {}", "✅".green()); } else {
         println!("  Circular Dependencies: {} DETECTED! {}", cycles.len(), "🚨".red());
         let path: Vec<_> = cycles[0].iter().map(|p| p.file_name().unwrap_or_default().to_string_lossy()).collect();
         println!("     Example: {} -> {}", path.join(" -> "), path[0]);
-    } else { println!("  No Circular Dependencies. {}", "✅".green()); }
+    }
 }
 
 #[rustfmt::skip]
@@ -169,7 +169,7 @@ fn build_hotspots_json(res: &AnalysisResult) -> String {
     let cwd = std::env::current_dir().unwrap_or_default();
     let js: Vec<String> = hs.iter().take(5).map(|p| {
         let n = escape_json(&p.strip_prefix(&cwd).unwrap_or(p).display().to_string());
-        let cv = res.cov.as_ref().and_then(|c| c.get(*p)).map(|c| c.percent().to_string()).unwrap_or("null".to_string());
+        let cv = res.cov.as_ref().and_then(|c| c.get(*p)).map_or("null".to_string(), |c| c.percent().to_string());
         format!("{{\"file\":\"{}\",\"risk_points\":{},\"churn_commits\":{},\"coverage_pct\":{}}}", n, fr.get(*p).unwrap_or(&0), res.churns.get(*p).unwrap_or(&0), cv)
     }).collect();
     js.join(",")
@@ -181,7 +181,7 @@ pub fn print_json(res: &AnalysisResult) {
     let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 15).count();
     let cycles = res.graph.detect_cycles().len();
     let cov_stars_str = res.score.cov_stars.map_or("null".to_string(), |s| s.to_string());
-    let cov_pct_str = res.score.cov_pct.map_or("null".to_string(), |p| format!("{:.1}", p));
+    let cov_pct_str = res.score.cov_pct.map_or("null".to_string(), |p| format!("{p:.1}"));
     println!("{{\n  \"summary\": {},\n  \"component_balance\": {{\"is_balanced\":{}}},\n  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},\n  \"hotspots\": [{}],\n  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},\n  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}\n}}", 
         build_summary_json(res), bal, res.graph.ignored_externals, h_fan, cycles, build_hotspots_json(res), res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high, res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
 }

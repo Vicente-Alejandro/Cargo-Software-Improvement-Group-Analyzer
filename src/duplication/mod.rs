@@ -5,14 +5,17 @@ use std::path::PathBuf;
 
 const WINDOW_SIZE: usize = 6;
 
+use rayon::prelude::*;
+
+#[must_use]
 pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
-    let mut contents = Vec::new();
-    for f in files {
-        contents.push(fs::read_to_string(f).unwrap_or_default());
-    }
+    let contents: Vec<String> = files
+        .par_iter()
+        .map(|f| fs::read_to_string(f).unwrap_or_default())
+        .collect();
 
     let mut all_lines: Vec<(PathBuf, Vec<&str>)> = Vec::new();
-    let mut hash_counts: HashMap<u64, usize> = HashMap::new();
+    let mut hash_counts: HashMap<u64, usize> = HashMap::with_capacity(files.len() * 100);
     for (i, f) in files.iter().enumerate() {
         let lines = extract_lines(&contents[i]);
         count_hashes(&lines, &mut hash_counts);
@@ -39,24 +42,24 @@ fn get_test_rows(content: &str) -> Vec<(usize, usize)> {
         .is_ok()
     {
         if let Some(tree) = parser.parse(content, None) {
-            find_test_modules(tree.root_node(), content.as_bytes(), &mut rows);
+            find_test_modules(tree.root_node(), content.as_bytes(), &mut rows, 0);
         }
     }
     rows
 }
 
-fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>) {
+#[rustfmt::skip]
+fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>, depth: usize) {
+    if depth > 100 { return; }
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        let is_test_attr = child.kind() == "attribute_item"
-            && child.utf8_text(content).unwrap_or("").contains("cfg(test)");
+        let is_test_attr = child.kind() == "attribute_item" && child.utf8_text(content).unwrap_or("").contains("cfg(test)");
         if is_test_attr {
-            if let Some(next) = skip_trivia(child.next_sibling()).filter(|n| n.kind() == "mod_item")
-            {
+            if let Some(next) = skip_trivia(child.next_sibling()).filter(|n| n.kind() == "mod_item") {
                 test_rows.push((next.start_position().row, next.end_position().row));
             }
         }
-        find_test_modules(child, content, test_rows);
+        find_test_modules(child, content, test_rows, depth + 1);
     }
 }
 

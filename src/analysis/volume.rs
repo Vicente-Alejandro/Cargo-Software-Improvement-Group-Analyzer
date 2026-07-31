@@ -23,10 +23,12 @@ struct Ctx<'a> {
 }
 
 impl VolumeEngine {
+    #[must_use]
     pub fn new() -> Self {
         Self {}
     }
 
+    #[must_use]
     pub fn analyze_tree(
         &self,
         path: &Path,

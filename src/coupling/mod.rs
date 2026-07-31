@@ -9,6 +9,7 @@ pub struct CouplingGraph {
 
 impl CouplingGraph {
     #[rustfmt::skip]
+    #[must_use]
     pub fn build(dir: &Path, files: &[PathBuf]) -> Self {
         let mod_map: HashMap<String, PathBuf> = files.iter().filter_map(|f| file_to_mod_name(dir, f).map(|n| (n, f.clone()))).collect();
         let mut ignored_externals = 0;
@@ -21,11 +22,13 @@ impl CouplingGraph {
     }
 
     #[rustfmt::skip]
+    #[must_use]
     pub fn fan_out(&self, file: &Path) -> usize {
-        self.edges.get(file).map(|d| d.len()).unwrap_or(0)
+        self.edges.get(file).map_or(0, std::collections::HashSet::len)
     }
 
     #[rustfmt::skip]
+    #[must_use]
     pub fn detect_cycles(&self) -> Vec<Vec<PathBuf>> {
         let (mut cycles, mut visited, mut stack) = (Vec::new(), HashSet::new(), Vec::new());
         for node in self.edges.keys() {
@@ -80,7 +83,7 @@ fn parse_use(p: &str, f: &Path, m: &HashMap<String, PathBuf>) -> Option<(Option<
     if let Some(rem) = cp.strip_prefix("crate::") {
         let mod_name = rem.split("::").next().unwrap_or(rem);
         let t = m.get(mod_name)?;
-        return if t != f { Some((Some(t.clone()), 0)) } else { None };
+        return if t == f { None } else { Some((Some(t.clone()), 0)) };
     }
     if cp.starts_with("super::") { return None; }
     if cp.starts_with("self::") { return None; }

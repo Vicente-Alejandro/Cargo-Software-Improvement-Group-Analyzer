@@ -158,19 +158,19 @@ const THRESHOLDS: [Threshold; 6] = [
 
 #[rustfmt::skip]
 fn calculate_stars(m: f64, h: f64, v: f64, d: f32) -> u8 {
-    THRESHOLDS.iter().find(|t| v <= t.v && h <= t.h && m <= t.m && (d as f64) <= t.d).map(|t| t.stars).unwrap_or(1)
+    THRESHOLDS.iter().find(|t| v <= t.v && h <= t.h && m <= t.m && f64::from(d) <= t.d).map_or(1, |t| t.stars)
 }
 
 #[rustfmt::skip]
 fn calculate_cov_stars(cov: f32) -> u8 {
     let th = [(95.0, 7), (80.0, 6), (60.0, 5), (40.0, 4), (20.0, 3)];
-    th.iter().find(|(t, _)| cov >= *t).map(|(_, s)| *s).unwrap_or(1)
+    th.iter().find(|(t, _)| cov >= *t).map_or(1, |(_, s)| *s)
 }
 
 #[rustfmt::skip]
 fn calculate_volume_stars(loc: usize) -> u8 {
     let th = [(10_000, 7), (30_000, 6), (75_000, 5), (150_000, 4), (300_000, 3), (600_000, 2)];
-    th.iter().find(|(t, _)| loc < *t).map(|(_, s)| *s).unwrap_or(1)
+    th.iter().find(|(t, _)| loc < *t).map_or(1, |(_, s)| *s)
 }
 
 #[cfg(test)]

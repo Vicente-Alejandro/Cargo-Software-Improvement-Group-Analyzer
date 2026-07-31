@@ -9,6 +9,7 @@ pub struct Coverage {
 }
 
 impl Coverage {
+    #[must_use]
     pub fn percent(&self) -> f32 {
         if self.total == 0 {
             100.0
@@ -18,6 +19,7 @@ impl Coverage {
     }
 }
 
+#[must_use]
 pub fn load_or_generate_lcov(
     project_dir: &Path,
     skip_auto: bool,
@@ -125,6 +127,7 @@ fn parse_da_line(da: &str, path: &Path, map: &mut HashMap<PathBuf, Coverage>) {
 }
 
 #[rustfmt::skip]
+#[must_use]
 pub fn churn_weighted_coverage(cov: &HashMap<PathBuf, Coverage>, churns: &HashMap<PathBuf, usize>) -> f32 {
     let (mut tc, mut wc) = (0, 0.0);
     for (path, file_cov) in cov {
