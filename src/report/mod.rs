@@ -10,7 +10,7 @@ pub struct AnalysisResult<'a> {
     pub churns: &'a HashMap<PathBuf, usize>,
     pub cov: &'a Option<HashMap<PathBuf, Coverage>>,
     pub score: &'a Score,
-    pub dup_pct: f32,
+    pub dup_res: &'a crate::duplication::DuplicationResult,
     pub graph: &'a crate::coupling::CouplingGraph,
 }
 
@@ -33,7 +33,7 @@ fn print_summary(res: &AnalysisResult) {
         if m.parameter_count > 4 { i += 1; }
         if m.cyclomatic_complexity > 5 { c += 1; }
     }
-    println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%", v, i, c, res.dup_pct);
+    println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%", v, i, c, res.dup_res.percentage);
 }
 
 #[rustfmt::skip]
@@ -157,7 +157,7 @@ fn build_summary_json(res: &AnalysisResult) -> String {
         if m.parameter_count > 4 { i += 1; }
         if m.cyclomatic_complexity > 5 { c += 1; }
     }
-    format!("{{\"total_functions\":{},\"volume_violations\":{},\"interface_violations\":{},\"complexity_violations\":{},\"duplication_pct\":{:.1}}}", res.metrics.len(), v, i, c, res.dup_pct)
+    format!("{{\"total_functions\":{},\"volume_violations\":{},\"interface_violations\":{},\"complexity_violations\":{},\"duplication_pct\":{:.1}}}", res.metrics.len(), v, i, c, res.dup_res.percentage)
 }
 
 #[rustfmt::skip]
@@ -206,6 +206,7 @@ mod tests {
     #[test]
     fn test_is_balanced() {
         let m1 = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("comp1/a.rs"),
             function_name: "f1".into(),
             lines_of_code: 100,
@@ -213,6 +214,7 @@ mod tests {
             cyclomatic_complexity: 0,
         };
         let m2 = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("comp2/b.rs"),
             function_name: "f2".into(),
             lines_of_code: 10,
@@ -224,6 +226,7 @@ mod tests {
         assert!(!is_balanced(&metrics));
 
         let m3 = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("comp2/c.rs"),
             function_name: "f3".into(),
             lines_of_code: 90,
@@ -238,6 +241,7 @@ mod tests {
     #[test]
     fn test_build_summary_json() {
         let metrics = vec![FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("a.rs"),
             function_name: "f1".into(),
             lines_of_code: 20,
@@ -263,7 +267,10 @@ mod tests {
             churns: &churns,
             cov: &cov,
             score: &score,
-            dup_pct: 1.5,
+            dup_res: &crate::duplication::DuplicationResult {
+                percentage: 1.5,
+                blocks: vec![],
+            },
             graph: &graph,
         };
         let json = build_summary_json(&res);
@@ -276,6 +283,7 @@ mod tests {
     #[test]
     fn test_print_all_and_json() {
         let metrics = vec![FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("a.rs"),
             function_name: "f1".into(),
             lines_of_code: 20,
@@ -301,7 +309,10 @@ mod tests {
             churns: &churns,
             cov: &cov,
             score: &score,
-            dup_pct: 1.5,
+            dup_res: &crate::duplication::DuplicationResult {
+                percentage: 1.5,
+                blocks: vec![],
+            },
             graph: &graph,
         };
 
@@ -317,6 +328,7 @@ mod tests {
     #[test]
     fn test_print_hotspots_with_data() {
         let metrics = vec![FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("a.rs"),
             function_name: "f1".into(),
             lines_of_code: 70,
@@ -350,7 +362,7 @@ mod tests {
             churns: &churns,
             cov: &cov,
             score: &score,
-            dup_pct: 0.0,
+            dup_res: &crate::duplication::DuplicationResult::default(),
             graph: &graph,
         };
 

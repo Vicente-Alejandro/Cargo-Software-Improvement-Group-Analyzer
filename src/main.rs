@@ -41,13 +41,13 @@ fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let metrics = analysis::run_analysis(dir)?;
     let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
     f.sort(); f.dedup();
-    let dup = duplication::calculate_duplication(&f);
+    let dup_res = duplication::calculate_duplication(&f);
     let graph = coupling::CouplingGraph::build(dir, &f);
     let churns = churn::get_frequencies(dir).unwrap_or_default();
     let cov = coverage::load_or_generate_lcov(dir, !args.auto_cov);
-    let ctx = scoring::EvalCtx { metrics: &metrics, dup, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
+    let ctx = scoring::EvalCtx { metrics: &metrics, dup: dup_res.percentage, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
     let score = scoring::evaluate(&ctx);
-    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: dup, graph: &graph };
+    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup_res, graph: &graph };
     if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
     Ok(score.stars)
 }

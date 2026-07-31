@@ -7,6 +7,7 @@ pub struct FunctionMetric {
     pub file_path: PathBuf,
     #[allow(dead_code)]
     pub function_name: String,
+    pub start_line: usize,
     pub lines_of_code: usize,
     pub parameter_count: usize,
     pub cyclomatic_complexity: usize,
@@ -84,10 +85,12 @@ impl VolumeEngine {
     }
 
     fn build_metric(&self, node: Node, path: &Path, ctx: &Ctx) -> FunctionMetric {
+        let start_line = node.start_position().row + 1;
         let loc = (node.end_position().row - node.start_position().row) + 1;
         FunctionMetric {
             file_path: path.to_path_buf(),
             function_name: ctx.name.clone(),
+            start_line,
             lines_of_code: loc,
             parameter_count: ctx.params,
             cyclomatic_complexity: ctx.comp,
@@ -197,5 +200,6 @@ mod tests {
         assert_eq!(metrics[0].parameter_count, 2);
         assert_eq!(metrics[0].cyclomatic_complexity, 3);
         assert_eq!(metrics[0].lines_of_code, 5);
+        assert_eq!(metrics[0].start_line, 2);
     }
 }

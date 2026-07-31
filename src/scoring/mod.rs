@@ -225,6 +225,7 @@ mod tests {
     fn test_categorize_risk() {
         let graph = CouplingGraph::default();
         let m_low = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::new(),
             function_name: String::new(),
             lines_of_code: 10,
@@ -234,6 +235,7 @@ mod tests {
         assert!(matches!(categorize_risk(&m_low, &graph), Risk::Low));
 
         let m_mod = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::new(),
             function_name: String::new(),
             lines_of_code: 20,
@@ -243,6 +245,7 @@ mod tests {
         assert!(matches!(categorize_risk(&m_mod, &graph), Risk::Moderate));
 
         let m_high = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::new(),
             function_name: String::new(),
             lines_of_code: 40,
@@ -252,6 +255,7 @@ mod tests {
         assert!(matches!(categorize_risk(&m_high, &graph), Risk::High));
 
         let m_vh = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::new(),
             function_name: String::new(),
             lines_of_code: 70,
@@ -274,6 +278,7 @@ mod tests {
     fn test_evaluate() {
         let graph = CouplingGraph::default();
         let m1 = FunctionMetric {
+            start_line: 0,
             file_path: PathBuf::from("a.rs"),
             function_name: String::new(),
             lines_of_code: 10,

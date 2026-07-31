@@ -7,14 +7,27 @@ const WINDOW_SIZE: usize = 6;
 
 use rayon::prelude::*;
 
+#[derive(Debug, Clone)]
+pub struct DuplicationBlock {
+    pub file_path: PathBuf,
+    pub start_line: usize,
+    pub end_line: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct DuplicationResult {
+    pub percentage: f32,
+    pub blocks: Vec<DuplicationBlock>,
+}
+
 #[must_use]
-pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
+pub fn calculate_duplication(files: &[PathBuf]) -> DuplicationResult {
     let contents: Vec<String> = files
         .par_iter()
         .map(|f| fs::read_to_string(f).unwrap_or_default())
         .collect();
 
-    let mut all_lines: Vec<(PathBuf, Vec<&str>)> = Vec::new();
+    let mut all_lines: Vec<(PathBuf, Vec<(usize, &str)>)> = Vec::new();
     let mut hash_counts: HashMap<u64, usize> = HashMap::with_capacity(files.len() * 100);
     for (i, f) in files.iter().enumerate() {
         let lines = extract_lines(&contents[i]);
@@ -25,12 +38,12 @@ pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
 }
 
 #[rustfmt::skip]
-fn extract_lines(content: &str) -> Vec<&str> {
+fn extract_lines(content: &str) -> Vec<(usize, &str)> {
     let test_rows = get_test_rows(content);
     content.lines().enumerate()
         .filter(|(i, _)| !test_rows.iter().any(|&(s, e)| i >= &s && i <= &e))
-        .map(|(_, l)| l.trim())
-        .filter(|t| !t.is_empty() && !t.starts_with("//"))
+        .map(|(i, l)| (i, l.trim()))
+        .filter(|(_, t)| !t.is_empty() && !t.starts_with("//"))
         .collect()
 }
 
@@ -73,34 +86,47 @@ fn skip_trivia(mut node: Option<tree_sitter::Node>) -> Option<tree_sitter::Node>
     None
 }
 
-fn count_hashes(lines: &[&str], counts: &mut HashMap<u64, usize>) {
+fn count_hashes(lines: &[(usize, &str)], counts: &mut HashMap<u64, usize>) {
     for w in lines.windows(WINDOW_SIZE) {
         *counts.entry(hash_window(w)).or_insert(0) += 1;
     }
 }
 
-fn hash_window(window: &[&str]) -> u64 {
+fn hash_window(window: &[(usize, &str)]) -> u64 {
     let mut hasher = DefaultHasher::new();
-    for line in window {
+    for (_, line) in window {
         line.hash(&mut hasher);
     }
     hasher.finish()
 }
 
-fn compute_percentage(all_lines: &[(PathBuf, Vec<&str>)], counts: &HashMap<u64, usize>) -> f32 {
+fn compute_percentage(
+    all_lines: &[(PathBuf, Vec<(usize, &str)>)],
+    counts: &HashMap<u64, usize>,
+) -> DuplicationResult {
     let (mut dup, mut tot) = (0, 0);
-    for (_, lines) in all_lines {
+    let mut blocks = Vec::new();
+    for (path, lines) in all_lines {
         tot += lines.len();
-        dup += count_dup_lines(lines, counts);
+        let file_blocks = get_dup_blocks(lines, counts);
+        dup += file_blocks.iter().map(|(s, e)| (e - s) + 1).sum::<usize>();
+        for (start_idx, end_idx) in file_blocks {
+            blocks.push(DuplicationBlock {
+                file_path: path.clone(),
+                start_line: lines[start_idx].0 + 1, // 1-based indexing for display
+                end_line: lines[end_idx].0 + 1,
+            });
+        }
     }
-    if tot == 0 {
+    let percentage = if tot == 0 {
         0.0
     } else {
         (dup as f32 / tot as f32) * 100.0
-    }
+    };
+    DuplicationResult { percentage, blocks }
 }
 
-fn count_dup_lines(lines: &[&str], counts: &HashMap<u64, usize>) -> usize {
+fn get_dup_blocks(lines: &[(usize, &str)], counts: &HashMap<u64, usize>) -> Vec<(usize, usize)> {
     let mut is_dup = vec![false; lines.len()];
     for (i, w) in lines.windows(WINDOW_SIZE).enumerate() {
         if *counts.get(&hash_window(w)).unwrap_or(&0) > 1 {
@@ -109,7 +135,22 @@ fn count_dup_lines(lines: &[&str], counts: &HashMap<u64, usize>) -> usize {
             }
         }
     }
-    is_dup.into_iter().filter(|&d| d).count()
+    let mut blocks = Vec::new();
+    let mut start = None;
+    for (i, &d) in is_dup.iter().enumerate() {
+        if d {
+            if start.is_none() {
+                start = Some(i);
+            }
+        } else if let Some(s) = start {
+            blocks.push((s, i - 1));
+            start = None;
+        }
+    }
+    if let Some(s) = start {
+        blocks.push((s, is_dup.len() - 1));
+    }
+    blocks
 }
 
 #[cfg(test)]
@@ -124,9 +165,11 @@ mod tests {
         let content = "fn main() {\n    // comment\n\n    let x = 1;\n}";
         let lines = extract_lines(content);
         assert_eq!(lines.len(), 3);
-        assert_eq!(lines[0], "fn main() {");
-        assert_eq!(lines[1], "let x = 1;");
-        assert_eq!(lines[2], "}");
+        assert_eq!(lines[0].1, "fn main() {");
+        assert_eq!(lines[0].0, 0);
+        assert_eq!(lines[1].1, "let x = 1;");
+        assert_eq!(lines[1].0, 3);
+        assert_eq!(lines[2].1, "}");
     }
 
     #[test]
@@ -140,8 +183,9 @@ mod tests {
         let mut f2 = File::create(&file2).unwrap();
         writeln!(f2, "a\nb\nc\nd\ne\nf\ng\nh").unwrap();
 
-        let pct = calculate_duplication(&[file1, file2]);
-        assert_eq!(pct, 0.0);
+        let res = calculate_duplication(&[file1, file2]);
+        assert_eq!(res.percentage, 0.0);
+        assert!(res.blocks.is_empty());
     }
 
     #[test]
@@ -155,8 +199,9 @@ mod tests {
         let mut f2 = File::create(&file2).unwrap();
         writeln!(f2, "a\nb\nc\nd\ne\nf\ng").unwrap();
 
-        let pct = calculate_duplication(&[file1, file2]);
-        assert_eq!(pct, 100.0);
+        let res = calculate_duplication(&[file1, file2]);
+        assert_eq!(res.percentage, 100.0);
+        assert_eq!(res.blocks.len(), 2);
     }
 
     #[test]
@@ -170,7 +215,7 @@ mod tests {
         let mut f2 = File::create(&file2).unwrap();
         writeln!(f2, "a\nb\nc\nd\ne").unwrap();
 
-        let pct = calculate_duplication(&[file1, file2]);
-        assert_eq!(pct, 0.0);
+        let res = calculate_duplication(&[file1, file2]);
+        assert_eq!(res.percentage, 0.0);
     }
 }
