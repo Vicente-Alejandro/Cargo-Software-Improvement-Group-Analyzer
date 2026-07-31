@@ -41,3 +41,46 @@ impl SigArgs {
         println!("  -h, --help          Print help");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_defaults() {
+        let args: Vec<String> = vec![];
+        let sig = SigArgs::parse(args.into_iter());
+        assert_eq!(sig.fail_below, 0);
+        assert_eq!(sig.format, "terminal");
+        assert!(!sig.auto_cov);
+    }
+
+    #[test]
+    fn test_parse_fail_below() {
+        let args = vec!["--fail-below".to_string(), "5".to_string()];
+        let sig = SigArgs::parse(args.into_iter());
+        assert_eq!(sig.fail_below, 5);
+        
+        let args_err = vec!["--fail-below".to_string(), "invalid".to_string()];
+        let sig_err = SigArgs::parse(args_err.into_iter());
+        assert_eq!(sig_err.fail_below, 0);
+    }
+
+    #[test]
+    fn test_parse_format() {
+        let args = vec!["--format".to_string(), "json".to_string()];
+        let sig = SigArgs::parse(args.into_iter());
+        assert_eq!(sig.format, "json");
+    }
+
+    #[test]
+    fn test_parse_auto_cov() {
+        let args = vec!["-a".to_string()];
+        let sig = SigArgs::parse(args.into_iter());
+        assert!(sig.auto_cov);
+
+        let args2 = vec!["--auto-cov".to_string()];
+        let sig2 = SigArgs::parse(args2.into_iter());
+        assert!(sig2.auto_cov);
+    }
+}
