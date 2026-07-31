@@ -30,3 +30,34 @@ fn parse_churn(dir: &Path, stdout: &str) -> anyhow::Result<HashMap<PathBuf, usiz
     }
     Ok(freqs)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::fs::File;
+
+    #[test]
+    fn test_parse_churn() {
+        let dir = tempdir().unwrap();
+        let file1_path = dir.path().join("file1.rs");
+        File::create(&file1_path).unwrap();
+        
+        let stdout = "file1.rs\n\nfile1.rs\nfile2.rs\n";
+        let freqs = parse_churn(dir.path(), stdout).unwrap();
+        
+        assert_eq!(freqs.len(), 2);
+        let key1 = file1_path.canonicalize().unwrap_or(file1_path);
+        let key2 = dir.path().join("file2.rs");
+        
+        assert_eq!(freqs.get(&key1), Some(&2));
+        assert_eq!(freqs.get(&key2), Some(&1));
+    }
+
+    #[test]
+    fn test_get_frequencies_no_git() {
+        let dir = tempdir().unwrap();
+        let freqs = get_frequencies(dir.path()).unwrap();
+        assert!(freqs.is_empty());
+    }
+}
