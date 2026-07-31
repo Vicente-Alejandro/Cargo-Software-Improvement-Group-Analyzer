@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.1] - 2026-07-30
+
+### Fixed
+- Fixed bug in `duplication` AST parsing where `#[cfg(test)]` attribute isolation failed due to child/sibling grammar mismatches, falsely inflating duplication to 8.1%. Code duplication is now restored to 1.3%.
+- Fixed `clippy::explicit_counter_loop` warning in coverage spinner.
+
 ## [0.8.0] - 2026-07-30
 
 ### Fixed

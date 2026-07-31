@@ -23,19 +23,24 @@ pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
 
 fn extract_lines(content: &str) -> Vec<&str> {
     let mut lines = Vec::new();
-    
+
     let mut parser = tree_sitter::Parser::new();
     let mut test_rows = Vec::new();
-    if parser.set_language(&tree_sitter_rust::LANGUAGE.into()).is_ok() {
+    if parser
+        .set_language(&tree_sitter_rust::LANGUAGE.into())
+        .is_ok()
+    {
         if let Some(tree) = parser.parse(content, None) {
             find_test_modules(tree.root_node(), content.as_bytes(), &mut test_rows);
         }
     }
-    
+
     for (i, line) in content.lines().enumerate() {
         let is_test = test_rows.iter().any(|&(start, end)| i >= start && i <= end);
-        if is_test { continue; }
-        
+        if is_test {
+            continue;
+        }
+
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with("//") {
             continue;
@@ -46,15 +51,27 @@ fn extract_lines(content: &str) -> Vec<&str> {
 }
 
 fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>) {
-    if node.kind() == "mod_item" {
-        let text = node.utf8_text(content).unwrap_or("");
-        if text.contains("#[cfg(test)]") {
-            test_rows.push((node.start_position().row, node.end_position().row));
-            return;
-        }
-    }
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
+        if child.kind() == "attribute_item" {
+            let text = child.utf8_text(content).unwrap_or("");
+            if text.contains("cfg(test)") {
+                let mut next = child.next_sibling();
+                while let Some(n) = next {
+                    if n.kind() == "mod_item" {
+                        test_rows.push((n.start_position().row, n.end_position().row));
+                        break;
+                    } else if n.kind() == "line_comment"
+                        || n.kind() == "block_comment"
+                        || n.kind() == "attribute_item"
+                    {
+                        next = n.next_sibling();
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
         find_test_modules(child, content, test_rows);
     }
 }
