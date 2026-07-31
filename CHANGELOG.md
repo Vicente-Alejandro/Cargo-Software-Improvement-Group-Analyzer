@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2] - 2026-07-30
+
+### Changed
+- **Performance**: Parallelized file ingestion during duplication analysis using `rayon`, massively reducing I/O bottlenecks on large codebases.
+- **Safety**: Added AST recursion bounds (`depth: 100`) to `duplication` walkers to prevent stack overflows on maliciously deep source files.
+- **Quality**: Enforced `#![warn(clippy::pedantic)]` and `#![deny(clippy::all)]` across the core engine, bringing `cargo-sig` up to elite maintainability standards (7/7 stars).
+
 ## [0.8.1] - 2026-07-30
 
 ### Fixed
