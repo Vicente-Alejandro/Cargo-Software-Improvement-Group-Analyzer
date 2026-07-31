@@ -41,11 +41,20 @@ fn generate_lcov(dir: &Path) -> bool {
     let v_stat = std::process::Command::new("cargo").args(["llvm-cov", "--version"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status();
     if !v_stat.is_ok_and(|s| s.success()) { return false; }
     use owo_colors::OwoColorize;
-    println!("{} ⏳ Generating coverage data via cargo-llvm-cov...", "[cargo-sig]".bold().cyan());
+    use std::io::Write;
     let Ok(mut c) = std::process::Command::new("cargo").args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"]).current_dir(dir).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn() else { return false; };
-    for _ in 0..180 {
-        if let Ok(Some(s)) = c.try_wait() { return s.success(); }
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    
+    let mut progress: f32 = 0.0;
+    for _ in 0..360 {
+        if let Ok(Some(s)) = c.try_wait() { 
+            print!("\r{} ⏳ Generating coverage data via cargo-llvm-cov... 100%   \n", "[cargo-sig]".bold().cyan());
+            let _ = std::io::stdout().flush();
+            return s.success(); 
+        }
+        progress += (99.0 - progress) * 0.05;
+        print!("\r{} ⏳ Generating coverage data via cargo-llvm-cov... {:.0}%   ", "[cargo-sig]".bold().cyan(), progress);
+        let _ = std::io::stdout().flush();
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
     let _ = c.kill();
     false
