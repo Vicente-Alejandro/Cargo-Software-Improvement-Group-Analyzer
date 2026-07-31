@@ -185,3 +185,49 @@ pub fn print_json(res: &AnalysisResult) {
     println!("{{\n  \"summary\": {},\n  \"component_balance\": {{\"is_balanced\":{}}},\n  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},\n  \"hotspots\": [{}],\n  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},\n  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}\n}}", 
         build_summary_json(res), bal, res.graph.ignored_externals, h_fan, cycles, build_hotspots_json(res), res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high, res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_escape_json() {
+        assert_eq!(escape_json("a\\b\"c"), "a\\\\b\\\"c");
+    }
+
+    #[test]
+    fn test_star_string() {
+        assert_eq!(star_string(0), "☆☆☆☆☆☆☆");
+        assert_eq!(star_string(3), "★★★☆☆☆☆");
+        assert_eq!(star_string(7), "★★★★★★★");
+    }
+
+    #[test]
+    fn test_is_balanced() {
+        let m1 = FunctionMetric { file_path: PathBuf::from("comp1/a.rs"), function_name: "f1".into(), lines_of_code: 100, parameter_count: 0, cyclomatic_complexity: 0 };
+        let m2 = FunctionMetric { file_path: PathBuf::from("comp2/b.rs"), function_name: "f2".into(), lines_of_code: 10, parameter_count: 0, cyclomatic_complexity: 0 };
+        let metrics = vec![m1.clone(), m2.clone()];
+        // comp1 has 100, comp2 has 10. Total 110. comp1 is > 50%.
+        assert!(!is_balanced(&metrics));
+
+        let m3 = FunctionMetric { file_path: PathBuf::from("comp2/c.rs"), function_name: "f3".into(), lines_of_code: 90, parameter_count: 0, cyclomatic_complexity: 0 };
+        let metrics_bal = vec![m1, m2, m3];
+        // comp1 has 100, comp2 has 100. Total 200. None > 50%.
+        assert!(is_balanced(&metrics_bal));
+    }
+
+    #[test]
+    fn test_build_summary_json() {
+        let metrics = vec![
+            FunctionMetric { file_path: PathBuf::from("a.rs"), function_name: "f1".into(), lines_of_code: 20, parameter_count: 5, cyclomatic_complexity: 6 },
+        ];
+        let graph = crate::coupling::CouplingGraph::default();
+        let churns = HashMap::new();
+        let cov = None;
+        let score = Score { code_stars: 1, cov_stars: None, cov_pct: None, volume_stars: 1, stars: 1, pct_moderate: 0.0, pct_high: 0.0, pct_very_high: 0.0, total_loc: 20 };
+        let res = AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_pct: 1.5, graph: &graph };
+        let json = build_summary_json(&res);
+        assert_eq!(json, "{\"total_functions\":1,\"volume_violations\":1,\"interface_violations\":1,\"complexity_violations\":1,\"duplication_pct\":1.5}");
+    }
+}
