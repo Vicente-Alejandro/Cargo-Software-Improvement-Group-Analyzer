@@ -64,3 +64,55 @@ fn is_valid_dir(path: &Path) -> bool {
     let name = path.file_name().unwrap_or_default().to_string_lossy();
     !name.starts_with('.') && name != "target"
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::fs::File;
+    use std::io::Write;
+
+    #[test]
+    fn test_is_valid_dir() {
+        assert!(is_valid_dir(Path::new("src")));
+        assert!(!is_valid_dir(Path::new(".git")));
+        assert!(!is_valid_dir(Path::new("target")));
+    }
+
+    #[test]
+    fn test_gather_files() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test.rs");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "fn test() {{}}").unwrap();
+        
+        let sub_dir = dir.path().join("sub");
+        std::fs::create_dir(&sub_dir).unwrap();
+        let sub_file = sub_dir.join("sub_test.rs");
+        let mut file2 = File::create(&sub_file).unwrap();
+        writeln!(file2, "fn sub_test() {{}}").unwrap();
+        
+        let git_dir = dir.path().join(".git");
+        std::fs::create_dir(&git_dir).unwrap();
+        let git_file = git_dir.join("ignore.rs");
+        let mut file3 = File::create(&git_file).unwrap();
+        writeln!(file3, "fn ignore() {{}}").unwrap();
+
+        let mut files = Vec::new();
+        gather_files(dir.path(), &mut files).unwrap();
+        
+        assert_eq!(files.len(), 2);
+    }
+
+    #[test]
+    fn test_run_analysis_and_parse() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("main.rs");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "fn main() {{\n    println!(\"Hello\");\n}}").unwrap();
+
+        let metrics = run_analysis(dir.path()).unwrap();
+        assert_eq!(metrics.len(), 1);
+        assert_eq!(metrics[0].function_name, "main");
+    }
+}
