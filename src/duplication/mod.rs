@@ -25,6 +25,9 @@ fn extract_lines(content: &str) -> Vec<&str> {
     let mut lines = Vec::new();
     for line in content.lines() {
         let trimmed = line.trim();
+        if trimmed.starts_with("#[cfg(test)]") {
+            break;
+        }
         if !trimmed.is_empty() && !trimmed.starts_with("//") {
             lines.push(trimmed);
         }

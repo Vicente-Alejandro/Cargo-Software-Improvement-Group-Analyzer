@@ -66,8 +66,8 @@ fn process_lcov_line(
     current_file: &mut Option<PathBuf>,
     map: &mut HashMap<PathBuf, Coverage>,
 ) {
-    if let Some(file) = line.strip_prefix("SF:") {
-        let p = dir.join(file.trim());
+    if let Some(path_str) = line.strip_prefix("SF:") {
+        let p = dir.join(path_str.trim());
         *current_file = Some(p.canonicalize().unwrap_or(p));
     } else if let Some(da) = line.strip_prefix("DA:") {
         if let Some(path) = current_file {
