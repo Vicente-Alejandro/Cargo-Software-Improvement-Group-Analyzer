@@ -22,36 +22,63 @@ pub fn load_or_generate_lcov(
     project_dir: &Path,
     skip_auto: bool,
 ) -> Option<HashMap<PathBuf, Coverage>> {
-    let lcov_path = project_dir.join("coverage.lcov");
-    if let Ok(content) = fs::read_to_string(&lcov_path) {
-        return parse_lcov_content(project_dir, &content);
+    let lcov = project_dir.join("coverage.lcov");
+    if let Ok(c) = fs::read_to_string(&lcov) {
+        return parse_lcov_content(project_dir, &c);
     }
-
-    if skip_auto || !generate_lcov(project_dir) {
-        return None;
+    if !skip_auto && generate_lcov(project_dir) {
+        if let Ok(c) = fs::read_to_string(&lcov) {
+            return parse_lcov_content(project_dir, &c);
+        }
     }
-
-    let content = fs::read_to_string(&lcov_path).ok()?;
-    parse_lcov_content(project_dir, &content)
+    None
 }
 
-#[rustfmt::skip]
 fn generate_lcov(dir: &Path) -> bool {
-    if std::env::var_os("LLVM_PROFILE_FILE").is_some() { return false; }
-    let v_stat = std::process::Command::new("cargo").args(["llvm-cov", "--version"]).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status();
-    if !v_stat.is_ok_and(|s| s.success()) { return false; }
+    if std::env::var_os("LLVM_PROFILE_FILE").is_some() {
+        return false;
+    }
+    let v = std::process::Command::new("cargo")
+        .args(["llvm-cov", "--version"])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+    if !v.is_ok_and(|s| s.success()) {
+        return false;
+    }
+    let Ok(c) = std::process::Command::new("cargo")
+        .args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"])
+        .current_dir(dir)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+    else {
+        return false;
+    };
+    wait_for_lcov(c)
+}
+
+fn wait_for_lcov(mut c: std::process::Child) -> bool {
     use owo_colors::OwoColorize;
     use std::io::Write;
-    let Ok(mut c) = std::process::Command::new("cargo").args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"]).current_dir(dir).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn() else { return false; };
     let frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     let start = std::time::Instant::now();
-    for i in 0..1800 { // 180 seconds, 100ms each
-        if let Ok(Some(s)) = c.try_wait() { 
-            print!("\r{} ✅ Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n", "[cargo-sig]".bold().cyan(), start.elapsed().as_secs_f32());
+    for i in 0..1800 {
+        if let Ok(Some(s)) = c.try_wait() {
+            print!(
+                "\r{} ✅ Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n",
+                "[cargo-sig]".bold().cyan(),
+                start.elapsed().as_secs_f32()
+            );
             let _ = std::io::stdout().flush();
-            return s.success(); 
+            return s.success();
         }
-        print!("\r{} {} Generating coverage data via cargo-llvm-cov... [{:.1}s]   ", "[cargo-sig]".bold().cyan(), frames[i % frames.len()], start.elapsed().as_secs_f32());
+        print!(
+            "\r{} {} Generating coverage data via cargo-llvm-cov... [{:.1}s]   ",
+            "[cargo-sig]".bold().cyan(),
+            frames[i % frames.len()],
+            start.elapsed().as_secs_f32()
+        );
         let _ = std::io::stdout().flush();
         std::thread::sleep(std::time::Duration::from_millis(100));
     }

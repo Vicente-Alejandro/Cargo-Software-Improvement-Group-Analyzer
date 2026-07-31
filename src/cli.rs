@@ -19,17 +19,12 @@ impl SigArgs {
         sig
     }
 
+    #[rustfmt::skip]
     fn apply_arg(&mut self, arg: &str, args: &mut impl Iterator<Item = String>) {
-        if arg == "--fail-below" {
-            self.fail_below = args.next().unwrap_or_default().parse().unwrap_or(0);
-        } else if arg == "--format" {
-            self.format = args.next().unwrap_or_default();
-        } else if arg == "-a" || arg == "--auto-cov" {
-            self.auto_cov = true;
-        } else if arg == "-h" || arg == "--help" {
-            Self::print_help();
-            std::process::exit(0);
-        }
+        if arg == "--fail-below" { self.fail_below = args.next().unwrap_or_default().parse().unwrap_or(0); return; }
+        if arg == "--format" { self.format = args.next().unwrap_or_default(); return; }
+        if arg == "-a" || arg == "--auto-cov" { self.auto_cov = true; return; }
+        if arg == "-h" || arg == "--help" { Self::print_help(); std::process::exit(0); }
     }
 
     fn print_help() {

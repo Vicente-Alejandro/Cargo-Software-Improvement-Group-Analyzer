@@ -21,59 +21,53 @@ pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
     compute_percentage(&all_lines, &hash_counts)
 }
 
+#[rustfmt::skip]
 fn extract_lines(content: &str) -> Vec<&str> {
-    let mut lines = Vec::new();
+    let test_rows = get_test_rows(content);
+    content.lines().enumerate()
+        .filter(|(i, _)| !test_rows.iter().any(|&(s, e)| i >= &s && i <= &e))
+        .map(|(_, l)| l.trim())
+        .filter(|t| !t.is_empty() && !t.starts_with("//"))
+        .collect()
+}
 
+fn get_test_rows(content: &str) -> Vec<(usize, usize)> {
+    let mut rows = Vec::new();
     let mut parser = tree_sitter::Parser::new();
-    let mut test_rows = Vec::new();
     if parser
         .set_language(&tree_sitter_rust::LANGUAGE.into())
         .is_ok()
     {
         if let Some(tree) = parser.parse(content, None) {
-            find_test_modules(tree.root_node(), content.as_bytes(), &mut test_rows);
+            find_test_modules(tree.root_node(), content.as_bytes(), &mut rows);
         }
     }
-
-    for (i, line) in content.lines().enumerate() {
-        let is_test = test_rows.iter().any(|&(start, end)| i >= start && i <= end);
-        if is_test {
-            continue;
-        }
-
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with("//") {
-            continue;
-        }
-        lines.push(trimmed);
-    }
-    lines
+    rows
 }
 
 fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>) {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        if child.kind() == "attribute_item" {
-            let text = child.utf8_text(content).unwrap_or("");
-            if text.contains("cfg(test)") {
-                let mut next = child.next_sibling();
-                while let Some(n) = next {
-                    if n.kind() == "mod_item" {
-                        test_rows.push((n.start_position().row, n.end_position().row));
-                        break;
-                    } else if n.kind() == "line_comment"
-                        || n.kind() == "block_comment"
-                        || n.kind() == "attribute_item"
-                    {
-                        next = n.next_sibling();
-                    } else {
-                        break;
-                    }
-                }
+        let is_test_attr = child.kind() == "attribute_item"
+            && child.utf8_text(content).unwrap_or("").contains("cfg(test)");
+        if is_test_attr {
+            if let Some(next) = skip_trivia(child.next_sibling()).filter(|n| n.kind() == "mod_item")
+            {
+                test_rows.push((next.start_position().row, next.end_position().row));
             }
         }
         find_test_modules(child, content, test_rows);
     }
+}
+
+fn skip_trivia(mut node: Option<tree_sitter::Node>) -> Option<tree_sitter::Node> {
+    while let Some(n) = node {
+        match n.kind() {
+            "line_comment" | "block_comment" | "attribute_item" => node = n.next_sibling(),
+            _ => return Some(n),
+        }
+    }
+    None
 }
 
 fn count_hashes(lines: &[&str], counts: &mut HashMap<u64, usize>) {
