@@ -23,31 +23,41 @@
 It solves a specific problem: giving any Rust project a **single, comparable maintainability score**, computed locally from its own AST and Git history — no uploading code to a SaaS dashboard, no dependency on a paid platform like CodeScene or SonarQube.
 
 ```text
-$ cargo sig
+$ cargo sig -a
 
 [cargo-sig] Cargo SIG - Running check...
-[cargo-sig] 
-[cargo-sig] Summary:
-[cargo-sig] Total Functions: 60
-[cargo-sig] Volume > 15 lines: 1
-[cargo-sig] Interface > 4 params: 4
-[cargo-sig] Complexity > 5 branches: 2
-[cargo-sig] Code Duplication: 1.8%
-[cargo-sig] 
-[cargo-sig] Component Balance:
-[cargo-sig]   ✅ All components are balanced.
-[cargo-sig] 
-[cargo-sig] ✅ [OK] No Hotspots.
-[cargo-sig] 
-[cargo-sig] Risk Profile:
-[cargo-sig] Moderate Risk: 8.9%
-[cargo-sig] High Risk: 0.0%
-[cargo-sig] Very High Risk: 0.0%
-[cargo-sig] ─────────────────────────────────────
-[cargo-sig] Maintainability Rating: ★★★★★★★ (7 / 7)
+[cargo-sig] ⏳ Generating coverage data via cargo-llvm-cov... 100%
+
+Summary:
+Total Functions: 76
+Volume > 15 lines: 2
+Interface > 4 params: 0
+Complexity > 5 branches: 1
+Code Duplication: 1.3%
+
+Component Balance:
+  All components are balanced. ✅
+
+Module Coupling:
+  40 external dependencies ignored. ℹ️
+  Fan-Out is healthy across all modules. ✅
+  No Circular Dependencies. ✅
+
+Risk Profile:
+Moderate Risk: 7.3%
+High Risk: 0.0%
+Very High Risk: 0.0%
+
+─────────────────────────────────────
+Maintainability Rating:
+  Code Health:   ★★★★★★★ (7 / 7)
+  Test Coverage: ★★★★★★★ (7 / 7) [96.4% weighted]
+  System Volume: ★★★★★★★ (7 / 7) [Total: 703 func LOC]
+  ──────────────────────────────
+  Final Score:   ★★★★★★★ (7 / 7)
 ```
 
-*(Illustrative output — exact formatting will stabilize as the phases in [ROADMAP.md](./ROADMAP.md) land.)*
+*(Actual output running against its own v0.7.1 repository)*
 
 ---
 
@@ -128,10 +138,10 @@ cargo sig
 
 | Flag | Description | Status |
 |---|---|---|
-| `--fail-below <N>` | Exit non-zero if the rating drops below `N` stars (1–7) — for CI quality gates | Completed |
-| `--format json\|html` | Export the detailed report instead of the terminal summary | Planned |
-| `hotspots` | Print only the Churn × Coverage hotspot ranking | Completed |
-| `--no-color` | Disable colored terminal output (also respects `NO_COLOR`) | Planned |
+| `-a`, `--auto-cov` | Enable automatic test coverage generation using `cargo-llvm-cov` | Completed |
+| `--fail-below <1-7>` | Exit non-zero if the rating drops below the threshold (for CI gates) | Completed |
+| `--format json\|html` | Export detailed structured reports instead of the terminal summary | Planned |
+| `-h`, `--help` | Print the CLI help overview | Completed |
 
 Example — using it as a CI quality gate:
 
@@ -139,20 +149,13 @@ Example — using it as a CI quality gate:
 cargo sig --fail-below 3
 ```
 
-### Advanced: Coverage Ingestion
+### Coverage Ingestion
 
-`cargo-sig` can cross-reference your architectural hotspots with your test coverage. It does not run your tests itself (to remain ultra-fast). Instead, it reads a `coverage.lcov` file if you generate one.
+`cargo-sig` can dynamically cross-reference your architectural hotspots with your test coverage. 
 
-1. Generate the coverage file using a tool like `cargo-llvm-cov`:
-   ```bash
-   cargo llvm-cov --lcov --output-path coverage.lcov
-   ```
-2. Run `cargo-sig`:
-   ```bash
-   cargo sig
-   ```
+By running `cargo sig -a` (or `--auto-cov`), the tool will automatically invoke `cargo-llvm-cov` in the background, rendering an asymptotic progress bar until LCOV data is successfully generated. It then parses this data and maps it against Git Churn to calculate your **Test Coverage** and **Maintainability Rating**.
 
-If the `coverage.lcov` file is present in the root directory, the Hotspots matrix will automatically display the test coverage percentage for your most dangerous files. If the file is not found, `cargo-sig` degrades gracefully and just prints `no cov data` next to the hotspots.
+If you run `cargo sig` without the `-a` flag, it runs an ultra-fast static check, ignoring coverage. If you try to run with `-a` but `cargo-llvm-cov` is not installed, it degrades gracefully and kindly advises: `N/A (Run 'cargo install cargo-llvm-cov' to enable)`.
 
 ---
 
