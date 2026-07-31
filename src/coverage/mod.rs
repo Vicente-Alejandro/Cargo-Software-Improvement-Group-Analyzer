@@ -101,3 +101,65 @@ pub fn churn_weighted_coverage(cov: &HashMap<PathBuf, Coverage>, churns: &HashMa
     let t_hit: usize = cov.values().map(|c| c.hit).sum();
     if t_tot == 0 { 100.0 } else { (t_hit as f32 / t_tot as f32) * 100.0 }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use std::fs::File;
+    use std::io::Write;
+
+    #[test]
+    fn test_coverage_percent() {
+        let cov = Coverage { hit: 5, total: 10 };
+        assert_eq!(cov.percent(), 50.0);
+        let cov_empty = Coverage { hit: 0, total: 0 };
+        assert_eq!(cov_empty.percent(), 100.0);
+    }
+
+    #[test]
+    fn test_parse_lcov_content() {
+        let content = "TN:\nSF:src/main.rs\nDA:1,1\nDA:2,0\nend_of_record\n";
+        let dir = PathBuf::from(".");
+        let map = parse_lcov_content(&dir, content).unwrap();
+        let path = dir.join("src/main.rs").canonicalize().unwrap_or(dir.join("src/main.rs"));
+        let cov = map.get(&path).unwrap();
+        assert_eq!(cov.total, 2);
+        assert_eq!(cov.hit, 1);
+    }
+
+    #[test]
+    fn test_churn_weighted_coverage() {
+        let mut cov = HashMap::new();
+        let path = PathBuf::from("src/main.rs");
+        cov.insert(path.clone(), Coverage { hit: 5, total: 10 });
+
+        let mut churns = HashMap::new();
+        churns.insert(path.clone(), 10);
+
+        let result = churn_weighted_coverage(&cov, &churns);
+        assert_eq!(result, 50.0);
+
+        let churns_empty = HashMap::new();
+        let result_fallback = churn_weighted_coverage(&cov, &churns_empty);
+        assert_eq!(result_fallback, 50.0);
+    }
+
+    #[test]
+    fn test_load_lcov_skip_auto() {
+        let dir = tempdir().unwrap();
+        let lcov_path = dir.path().join("coverage.lcov");
+        let mut file = File::create(&lcov_path).unwrap();
+        writeln!(file, "SF:test.rs\nDA:1,1\n").unwrap();
+
+        let map = load_or_generate_lcov(dir.path(), true).unwrap();
+        assert_eq!(map.len(), 1);
+    }
+
+    #[test]
+    fn test_load_lcov_no_file_skip_auto() {
+        let dir = tempdir().unwrap();
+        let map = load_or_generate_lcov(dir.path(), true);
+        assert!(map.is_none());
+    }
+}
