@@ -23,16 +23,40 @@ pub fn calculate_duplication(files: &[PathBuf]) -> f32 {
 
 fn extract_lines(content: &str) -> Vec<&str> {
     let mut lines = Vec::new();
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("#[cfg(test)]") {
-            break;
-        }
-        if !trimmed.is_empty() && !trimmed.starts_with("//") {
-            lines.push(trimmed);
+    
+    let mut parser = tree_sitter::Parser::new();
+    let mut test_rows = Vec::new();
+    if parser.set_language(&tree_sitter_rust::LANGUAGE.into()).is_ok() {
+        if let Some(tree) = parser.parse(content, None) {
+            find_test_modules(tree.root_node(), content.as_bytes(), &mut test_rows);
         }
     }
+    
+    for (i, line) in content.lines().enumerate() {
+        let is_test = test_rows.iter().any(|&(start, end)| i >= start && i <= end);
+        if is_test { continue; }
+        
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with("//") {
+            continue;
+        }
+        lines.push(trimmed);
+    }
     lines
+}
+
+fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>) {
+    if node.kind() == "mod_item" {
+        let text = node.utf8_text(content).unwrap_or("");
+        if text.contains("#[cfg(test)]") {
+            test_rows.push((node.start_position().row, node.end_position().row));
+            return;
+        }
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        find_test_modules(child, content, test_rows);
+    }
 }
 
 fn count_hashes(lines: &[&str], counts: &mut HashMap<u64, usize>) {

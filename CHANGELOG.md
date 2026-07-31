@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0] - 2026-07-30
+
+### Fixed
+- Fixed an architectural blind spot where `duplication` analysis would ignore production code placed after `#[cfg(test)]` modules; it now uses full AST parsing to precisely skip only test nodes.
+- Replaced the simulated coverage progress percentage with an honest visual spinner and elapsed time tracker for better UX.
+
 ## [0.7.1] - 2026-07-30
 
 ### Fixed
