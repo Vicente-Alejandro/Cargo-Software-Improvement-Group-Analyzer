@@ -198,4 +198,75 @@ mod tests {
         let score = evaluate(&ctx);
         assert_eq!(score.stars, 7);
     }
+
+    #[test]
+    fn test_calculate_cov_stars() {
+        assert_eq!(calculate_cov_stars(100.0), 7);
+        assert_eq!(calculate_cov_stars(95.0), 7);
+        assert_eq!(calculate_cov_stars(85.0), 6);
+        assert_eq!(calculate_cov_stars(65.0), 5);
+        assert_eq!(calculate_cov_stars(45.0), 4);
+        assert_eq!(calculate_cov_stars(25.0), 3);
+        assert_eq!(calculate_cov_stars(10.0), 1);
+    }
+
+    #[test]
+    fn test_calculate_volume_stars() {
+        assert_eq!(calculate_volume_stars(5_000), 7);
+        assert_eq!(calculate_volume_stars(15_000), 6);
+        assert_eq!(calculate_volume_stars(50_000), 5);
+        assert_eq!(calculate_volume_stars(100_000), 4);
+        assert_eq!(calculate_volume_stars(200_000), 3);
+        assert_eq!(calculate_volume_stars(400_000), 2);
+        assert_eq!(calculate_volume_stars(700_000), 1);
+    }
+
+    #[test]
+    fn test_categorize_risk() {
+        let graph = CouplingGraph::default();
+        let m_low = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 10, parameter_count: 2, cyclomatic_complexity: 2 };
+        assert!(matches!(categorize_risk(&m_low, &graph), Risk::Low));
+        
+        let m_mod = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 20, parameter_count: 2, cyclomatic_complexity: 2 };
+        assert!(matches!(categorize_risk(&m_mod, &graph), Risk::Moderate));
+
+        let m_high = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 40, parameter_count: 2, cyclomatic_complexity: 2 };
+        assert!(matches!(categorize_risk(&m_high, &graph), Risk::High));
+
+        let m_vh = FunctionMetric { file_path: PathBuf::new(), function_name: String::new(), lines_of_code: 70, parameter_count: 2, cyclomatic_complexity: 2 };
+        assert!(matches!(categorize_risk(&m_vh, &graph), Risk::VeryHigh));
+    }
+
+    #[test]
+    fn test_compute_score_thresholds() {
+        let s2 = compute_score([100, 0, 0, 12], 0.0, true);
+        assert_eq!(s2.stars, 2);
+
+        let s_unbalanced = compute_score([100, 0, 0, 0], 0.0, false);
+        assert_eq!(s_unbalanced.stars, 5);
+    }
+
+    #[test]
+    fn test_evaluate() {
+        let graph = CouplingGraph::default();
+        let m1 = FunctionMetric { file_path: PathBuf::from("a.rs"), function_name: String::new(), lines_of_code: 10, parameter_count: 2, cyclomatic_complexity: 2 };
+        
+        let churns = HashMap::new();
+        let mut cov_map = HashMap::new();
+        cov_map.insert(PathBuf::from("a.rs"), Coverage { hit: 1, total: 2 });
+        let cov = Some(cov_map);
+
+        let metrics = vec![m1];
+        let ctx = EvalCtx {
+            metrics: &metrics,
+            dup: 0.0,
+            bal: true,
+            graph: &graph,
+            cov: &cov,
+            churns: &churns,
+        };
+
+        let score = evaluate(&ctx);
+        assert_eq!(score.stars, 4);
+    }
 }
