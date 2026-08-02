@@ -49,6 +49,12 @@ fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let score = scoring::evaluate(&ctx);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup_res, graph: &graph };
     if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
+    if args.report {
+        report::ensure_gitignored(dir)?;
+        let path = report::generate_markdown_report(&res, dir)?;
+        let rel_path = path.strip_prefix(dir).unwrap_or(&path);
+        println!("\n{} {}", "✅ Full Markdown report generated:".green().bold(), rel_path.display());
+    }
     Ok(score.stars)
 }
 
@@ -77,6 +83,7 @@ mod tests {
             fail_below: 0,
             format: "terminal".to_string(),
             auto_cov: false,
+            report: true,
         };
         let stars = run_app(&args, dir.path()).unwrap();
         assert_eq!(stars, 5); // 5 stars because it's unbalanced (1 file = 100%)

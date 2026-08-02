@@ -4,6 +4,7 @@ pub struct SigArgs {
     #[allow(dead_code)]
     pub format: String,
     pub auto_cov: bool,
+    pub report: bool,
 }
 
 impl SigArgs {
@@ -12,6 +13,7 @@ impl SigArgs {
             fail_below: 0,
             format: "terminal".to_string(),
             auto_cov: false,
+            report: false,
         };
         while let Some(arg) = args.next() {
             sig.apply_arg(&arg, &mut args);
@@ -23,6 +25,7 @@ impl SigArgs {
     fn apply_arg(&mut self, arg: &str, args: &mut impl Iterator<Item = String>) {
         if arg == "--fail-below" { self.fail_below = args.next().unwrap_or_default().parse().unwrap_or(0); return; }
         if arg == "--format" { self.format = args.next().unwrap_or_default(); return; }
+        if arg == "-r" || arg == "--report" { self.report = true; return; }
         if arg == "-a" || arg == "--auto-cov" { self.auto_cov = true; return; }
         if arg == "-h" || arg == "--help" { Self::print_help(); std::process::exit(0); }
     }
@@ -51,14 +54,13 @@ impl SigArgs {
             "--format <format>".green()
         );
         println!(
+            "  {}     Generate a full Markdown report (tools/cargo-sig/SIG_REPORT.md)",
+            "-r, --report".green()
+        );
+        println!(
             "  {}         Print this help message\n",
             "-h, --help".green()
         );
-        println!("{}", "Coming soon in v1.0.x:".bold());
-        println!(
-            "  cargo sig report        Generate an explanatory markdown report (SIG_REPORT.md)"
-        );
-        println!("  cargo sig report --html Generate an interactive HTML report");
     }
 }
 
@@ -107,5 +109,16 @@ mod tests {
         let args2 = vec!["--auto-cov".to_string()];
         let sig2 = SigArgs::parse(args2.into_iter());
         assert!(sig2.auto_cov);
+    }
+
+    #[test]
+    fn test_parse_report() {
+        let args = vec!["-r".to_string()];
+        let sig = SigArgs::parse(args.into_iter());
+        assert!(sig.report);
+
+        let args2 = vec!["--report".to_string()];
+        let sig2 = SigArgs::parse(args2.into_iter());
+        assert!(sig2.report);
     }
 }
