@@ -5,6 +5,12 @@ use owo_colors::OwoColorize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+pub mod gitignore;
+pub mod markdown;
+
+pub use gitignore::ensure_gitignored;
+pub use markdown::generate_markdown_report;
+
 pub struct AnalysisResult<'a> {
     pub metrics: &'a [FunctionMetric],
     pub churns: &'a HashMap<PathBuf, usize>,
@@ -115,6 +121,7 @@ fn print_profile(s: &Score) {
     } else { println!("  Test Coverage: {}", "N/A (No coverage data. Run 'cargo sig -a' to auto-generate)".dimmed()); }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
+    println!("\n{}", "💡 Tip: Run 'cargo sig -r' to generate a detailed Markdown report or 'cargo sig -h' for help.".dimmed());
 }
 
 fn star_string(stars: u8) -> String {
