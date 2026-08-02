@@ -1,6 +1,13 @@
 # Changelog
+ 
+## [1.0.0] - 2026-08-01
 
-## [0.8.2] - 2026-07-30
+### Added
+- **Diagnostic Source Tracking**: Modified volume, complexity, parameter, and duplication analysis engines to capture and retain exact file paths, line ranges, and AST locations for every maintainability violation.
+- **Enhanced CLI Help**: Upgraded `--help` overview with colored documentation and rich contextual descriptions for upcoming features.
+
+### Changed
+- Re-architected `DuplicationResult` to preserve exact continuous duplicated block spans across modules without discarding diagnostic data.
 
 ### Changed
 - **Performance**: Parallelized file ingestion during duplication analysis using `rayon`, massively reducing I/O bottlenecks on large codebases.
