@@ -124,12 +124,19 @@ fn print_profile(s: &Score) {
     println!("\n{}", "💡 Tip: Run 'cargo sig -r' to generate a detailed Markdown report or 'cargo sig -h' for help.".dimmed());
 }
 
-fn star_string(stars: u8) -> String {
+pub fn star_string(stars: u8) -> String {
     format!(
         "{}{}",
         "★".repeat(stars as usize),
         "☆".repeat((7 - stars) as usize)
     )
+}
+
+pub fn format_rel_path(path: &std::path::Path, root_dir: &std::path::Path) -> String {
+    path.strip_prefix(root_dir)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 fn color_stars(stars: u8, text: String) -> String {

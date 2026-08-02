@@ -4,7 +4,7 @@ use std::path::Path;
 
 pub fn ensure_gitignored(root_dir: &Path) -> io::Result<()> {
     let gitignore_path = root_dir.join(".gitignore");
-    if !is_ignored(&gitignore_path)? {
+    if !is_ignored(&gitignore_path)? && io::stdin().is_terminal() {
         prompt_and_add(&gitignore_path)?;
     }
     Ok(())
@@ -15,45 +15,43 @@ fn is_ignored(gitignore_path: &Path) -> io::Result<bool> {
         return Ok(false);
     }
     let content = fs::read_to_string(gitignore_path)?;
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed == "tools/cargo-sig"
-            || trimmed == "tools/cargo-sig/"
-            || trimmed == "/tools/cargo-sig"
-            || trimmed == "/tools/cargo-sig/"
-            || trimmed == "tools/"
-        {
-            return Ok(true);
-        }
-    }
-    Ok(false)
+    Ok(content.lines().any(is_sig_line))
+}
+
+fn is_sig_line(line: &str) -> bool {
+    let t = line.trim();
+    t == "tools/cargo-sig"
+        || t == "tools/cargo-sig/"
+        || t == "/tools/cargo-sig"
+        || t == "/tools/cargo-sig/"
+        || t == "tools/"
 }
 
 fn prompt_and_add(gitignore_path: &Path) -> io::Result<()> {
-    if !io::stdin().is_terminal() {
-        return Ok(());
-    }
-
     print!(
         "\n[cargo-sig] Directory 'tools/cargo-sig/' is not in .gitignore.\nAdd 'tools/cargo-sig/' to .gitignore? [Y/n]: "
     );
     io::stdout().flush()?;
-
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
-    let trimmed = input.trim();
-
-    if trimmed.is_empty()
-        || trimmed.eq_ignore_ascii_case("y")
-        || trimmed.eq_ignore_ascii_case("yes")
-    {
-        let mut file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(gitignore_path)?;
-        writeln!(file, "\n# cargo-sig artifacts\ntools/cargo-sig/")?;
-        println!("[cargo-sig] ✅ Added 'tools/cargo-sig/' to .gitignore.");
+    if user_confirmed(&input) {
+        append_sig_ignore(gitignore_path)?;
     }
+    Ok(())
+}
+
+fn user_confirmed(input: &str) -> bool {
+    let t = input.trim();
+    t.is_empty() || t.eq_ignore_ascii_case("y") || t.eq_ignore_ascii_case("yes")
+}
+
+fn append_sig_ignore(gitignore_path: &Path) -> io::Result<()> {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(gitignore_path)?;
+    writeln!(file, "\n# cargo-sig artifacts\ntools/cargo-sig/")?;
+    println!("[cargo-sig] ✅ Added 'tools/cargo-sig/' to .gitignore.");
     Ok(())
 }
 
@@ -86,9 +84,18 @@ mod tests {
     }
 
     #[test]
+    fn test_user_confirmed() {
+        assert!(user_confirmed(""));
+        assert!(user_confirmed("y"));
+        assert!(user_confirmed("Y"));
+        assert!(user_confirmed("yes"));
+        assert!(!user_confirmed("n"));
+        assert!(!user_confirmed("no"));
+    }
+
+    #[test]
     fn test_ensure_gitignored_non_interactive() {
         let dir = tempdir().unwrap();
-        // In test environments stdin is typically non-interactive, so ensure_gitignored should return Ok(()) without blocking
         let res = ensure_gitignored(dir.path());
         assert!(res.is_ok());
     }
