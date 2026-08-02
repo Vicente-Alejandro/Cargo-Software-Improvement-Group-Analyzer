@@ -1,5 +1,12 @@
 # Changelog
  
+## [1.1.0] - 2026-08-01
+
+### Added
+- **Markdown Report Generator (`-r, --report`)**: Introduced actionable markdown report generation (`tools/cargo-sig/SIG_REPORT.md`) containing full tables for Unit Size, Complexity, Interface Parameters, Duplicated Code Spans, and Churn × Risk Hotspots.
+- **Interactive `.gitignore` Assistant**: Automatically prompts to safely add `tools/cargo-sig/` to `.gitignore` on first generation when running in interactive environments.
+- **Discovery Hint**: Added discovery suggestion in default terminal output to introduce users to `-r` and `--help`.
+
 ## [1.0.0] - 2026-08-01
 
 ### Added

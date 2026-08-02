@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
 
-**Current version:** `1.0.0`
+**Current version:** `1.1.0`
 
 </div>
 
@@ -141,6 +141,7 @@ cargo sig
 | Flag | Description | Status |
 |---|---|---|
 | `-a`, `--auto-cov` | Enable automatic test coverage generation using `cargo-llvm-cov` | Completed |
+| `-r`, `--report` | Generate a full Markdown report (`tools/cargo-sig/SIG_REPORT.md`) | Completed |
 | `--fail-below <1-7>` | Exit non-zero if the rating drops below the threshold (for CI gates) | Completed |
 | `--format json\|html` | Export detailed structured reports instead of the terminal summary | Planned |
 | `-h`, `--help` | Print the CLI help overview | Completed |
