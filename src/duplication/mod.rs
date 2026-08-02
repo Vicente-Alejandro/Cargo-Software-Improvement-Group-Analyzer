@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const WINDOW_SIZE: usize = 6;
 
@@ -66,13 +66,18 @@ fn find_test_modules(node: tree_sitter::Node, content: &[u8], test_rows: &mut Ve
     if depth > 100 { return; }
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        let is_test_attr = child.kind() == "attribute_item" && child.utf8_text(content).unwrap_or("").contains("cfg(test)");
-        if is_test_attr {
-            if let Some(next) = skip_trivia(child.next_sibling()).filter(|n| n.kind() == "mod_item") {
-                test_rows.push((next.start_position().row, next.end_position().row));
-            }
-        }
+        check_test_mod(child, content, test_rows);
         find_test_modules(child, content, test_rows, depth + 1);
+    }
+}
+
+fn check_test_mod(child: tree_sitter::Node, content: &[u8], test_rows: &mut Vec<(usize, usize)>) {
+    let is_test_attr = child.kind() == "attribute_item"
+        && child.utf8_text(content).unwrap_or("").contains("cfg(test)");
+    if is_test_attr {
+        if let Some(next) = skip_trivia(child.next_sibling()).filter(|n| n.kind() == "mod_item") {
+            test_rows.push((next.start_position().row, next.end_position().row));
+        }
     }
 }
 
@@ -100,33 +105,35 @@ fn hash_window(window: &[(usize, &str)]) -> u64 {
     hasher.finish()
 }
 
-fn compute_percentage(
-    all_lines: &[(PathBuf, Vec<(usize, &str)>)],
-    counts: &HashMap<u64, usize>,
-) -> DuplicationResult {
-    let (mut dup, mut tot) = (0, 0);
-    let mut blocks = Vec::new();
+#[rustfmt::skip]
+fn compute_percentage(all_lines: &[(PathBuf, Vec<(usize, &str)>)], counts: &HashMap<u64, usize>) -> DuplicationResult {
+    let (mut dup, mut tot, mut blocks) = (0, 0, Vec::new());
     for (path, lines) in all_lines {
         tot += lines.len();
         let file_blocks = get_dup_blocks(lines, counts);
         dup += file_blocks.iter().map(|(s, e)| (e - s) + 1).sum::<usize>();
-        for (start_idx, end_idx) in file_blocks {
-            blocks.push(DuplicationBlock {
-                file_path: path.clone(),
-                start_line: lines[start_idx].0 + 1, // 1-based indexing for display
-                end_line: lines[end_idx].0 + 1,
-            });
-        }
+        collect_dup_blocks(path, lines, &file_blocks, &mut blocks);
     }
-    let percentage = if tot == 0 {
-        0.0
-    } else {
-        (dup as f32 / tot as f32) * 100.0
-    };
+    let percentage = if tot == 0 { 0.0 } else { (dup as f32 / tot as f32) * 100.0 };
     DuplicationResult { percentage, blocks }
 }
 
-fn get_dup_blocks(lines: &[(usize, &str)], counts: &HashMap<u64, usize>) -> Vec<(usize, usize)> {
+fn collect_dup_blocks(
+    path: &Path,
+    lines: &[(usize, &str)],
+    file_blocks: &[(usize, usize)],
+    blocks: &mut Vec<DuplicationBlock>,
+) {
+    for &(s, e) in file_blocks {
+        blocks.push(DuplicationBlock {
+            file_path: path.to_path_buf(),
+            start_line: lines[s].0 + 1,
+            end_line: lines[e].0 + 1,
+        });
+    }
+}
+
+fn mark_dup_lines(lines: &[(usize, &str)], counts: &HashMap<u64, usize>) -> Vec<bool> {
     let mut is_dup = vec![false; lines.len()];
     for (i, w) in lines.windows(WINDOW_SIZE).enumerate() {
         if *counts.get(&hash_window(w)).unwrap_or(&0) > 1 {
@@ -135,22 +142,32 @@ fn get_dup_blocks(lines: &[(usize, &str)], counts: &HashMap<u64, usize>) -> Vec<
             }
         }
     }
-    let mut blocks = Vec::new();
-    let mut start = None;
+    is_dup
+}
+
+#[rustfmt::skip]
+fn get_dup_blocks(lines: &[(usize, &str)], counts: &HashMap<u64, usize>) -> Vec<(usize, usize)> {
+    let is_dup = mark_dup_lines(lines, counts);
+    let (mut blocks, mut start) = (Vec::new(), None);
     for (i, &d) in is_dup.iter().enumerate() {
-        if d {
-            if start.is_none() {
-                start = Some(i);
-            }
-        } else if let Some(s) = start {
-            blocks.push((s, i - 1));
-            start = None;
-        }
+        process_dup_step(d, i, &mut start, &mut blocks);
     }
-    if let Some(s) = start {
-        blocks.push((s, is_dup.len() - 1));
-    }
+    if let Some(s) = start { blocks.push((s, is_dup.len() - 1)); }
     blocks
+}
+
+fn process_dup_step(
+    d: bool,
+    i: usize,
+    start: &mut Option<usize>,
+    blocks: &mut Vec<(usize, usize)>,
+) {
+    if d && start.is_none() {
+        *start = Some(i);
+    } else if !d && start.is_some() {
+        blocks.push((start.unwrap(), i - 1));
+        *start = None;
+    }
 }
 
 #[cfg(test)]

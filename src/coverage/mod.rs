@@ -37,15 +37,7 @@ pub fn load_or_generate_lcov(
 }
 
 fn generate_lcov(dir: &Path) -> bool {
-    if std::env::var_os("LLVM_PROFILE_FILE").is_some() {
-        return false;
-    }
-    let v = std::process::Command::new("cargo")
-        .args(["llvm-cov", "--version"])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status();
-    if !v.is_ok_and(|s| s.success()) {
+    if std::env::var_os("LLVM_PROFILE_FILE").is_some() || !has_llvm_cov() {
         return false;
     }
     let Ok(c) = std::process::Command::new("cargo")
@@ -60,32 +52,51 @@ fn generate_lcov(dir: &Path) -> bool {
     wait_for_lcov(c)
 }
 
+fn has_llvm_cov() -> bool {
+    std::process::Command::new("cargo")
+        .args(["llvm-cov", "--version"])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success())
+}
+
 fn wait_for_lcov(mut c: std::process::Child) -> bool {
-    use owo_colors::OwoColorize;
-    use std::io::Write;
-    let frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     let start = std::time::Instant::now();
     for i in 0..1800 {
         if let Ok(Some(s)) = c.try_wait() {
-            print!(
-                "\r{} ✅ Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n",
-                "[cargo-sig]".bold().cyan(),
-                start.elapsed().as_secs_f32()
-            );
-            let _ = std::io::stdout().flush();
+            print_lcov_done(start.elapsed().as_secs_f32());
             return s.success();
         }
-        print!(
-            "\r{} {} Generating coverage data via cargo-llvm-cov... [{:.1}s]   ",
-            "[cargo-sig]".bold().cyan(),
-            frames[i % frames.len()],
-            start.elapsed().as_secs_f32()
-        );
-        let _ = std::io::stdout().flush();
+        print_lcov_progress(i, start.elapsed().as_secs_f32());
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
     let _ = c.kill();
     false
+}
+
+fn print_lcov_done(elapsed: f32) {
+    use owo_colors::OwoColorize;
+    use std::io::Write;
+    print!(
+        "\r{} ✅ Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n",
+        "[cargo-sig]".bold().cyan(),
+        elapsed
+    );
+    let _ = std::io::stdout().flush();
+}
+
+fn print_lcov_progress(i: usize, elapsed: f32) {
+    use owo_colors::OwoColorize;
+    use std::io::Write;
+    let frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    print!(
+        "\r{} {} Generating coverage data via cargo-llvm-cov... [{:.1}s]   ",
+        "[cargo-sig]".bold().cyan(),
+        frames[i % frames.len()],
+        elapsed
+    );
+    let _ = std::io::stdout().flush();
 }
 
 fn parse_lcov_content(dir: &Path, content: &str) -> Option<HashMap<PathBuf, Coverage>> {
