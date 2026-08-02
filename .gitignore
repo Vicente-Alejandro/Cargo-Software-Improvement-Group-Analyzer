@@ -5,3 +5,5 @@ work.md
 tools/cargo-qc/
 tree.txt
 coverage.lcov
+# cargo-sig artifacts
+tools/cargo-sig/
