@@ -28,12 +28,37 @@ impl SigArgs {
     }
 
     fn print_help() {
-        println!("cargo-sig - Software Improvement Group Analyzer");
-        println!("\nUsage: cargo sig [OPTIONS]");
-        println!("  -a, --auto-cov      Enable automatic coverage generation");
-        println!("  --fail-below <1-7>  Fail if rating is below threshold");
-        println!("  --format <format>   Output format [default: terminal]");
-        println!("  -h, --help          Print help");
+        use owo_colors::OwoColorize;
+        println!(
+            "{} - Software Improvement Group Analyzer\n",
+            "cargo-sig".bold().cyan()
+        );
+        println!("Scores your Rust project's maintainability against SIG's 10 Guidelines,");
+        println!("cross-referencing complexity with Git Churn and Test Coverage.\n");
+        println!("{}", "Usage:".bold());
+        println!("  cargo sig [OPTIONS]\n");
+        println!("{}", "Options:".bold());
+        println!(
+            "  {}     Enable automatic test coverage generation via cargo-llvm-cov",
+            "-a, --auto-cov".green()
+        );
+        println!(
+            "  {} Fail if the final rating drops below this threshold (e.g., for CI)",
+            "--fail-below <1-7>".green()
+        );
+        println!(
+            "  {}  Output format: 'terminal' or 'json' [default: terminal]",
+            "--format <format>".green()
+        );
+        println!(
+            "  {}         Print this help message\n",
+            "-h, --help".green()
+        );
+        println!("{}", "Coming soon in v1.0.x:".bold());
+        println!(
+            "  cargo sig report        Generate an explanatory markdown report (SIG_REPORT.md)"
+        );
+        println!("  cargo sig report --html Generate an interactive HTML report");
     }
 }
 
