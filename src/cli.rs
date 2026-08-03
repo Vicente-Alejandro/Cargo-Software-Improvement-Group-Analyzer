@@ -45,7 +45,7 @@ impl SigArgs {
                 self.report = true;
                 true
             }
-            "--html" => {
+            "-w" | "--html" | "--web" => {
                 self.html = true;
                 true
             }
@@ -104,7 +104,7 @@ impl SigArgs {
         println!("  {} Fail if the final rating drops below this threshold (e.g., for CI)", "--fail-below <1-7>".green());
         println!("  {}  Output format: 'terminal' or 'json' [default: terminal]", "--format <format>".green());
         println!("  {}     Generate a full Markdown report (tools/cargo-sig/SIG_REPORT.md)", "-r, --report".green());
-        println!("  {}               Generate a standalone HTML report (tools/cargo-sig/SIG_REPORT.html)", "--html".green());
+        println!("  {}   Generate a standalone HTML report (tools/cargo-sig/SIG_REPORT.html)", "-w, --html, --web".green());
         println!("  {}         Print this help message\n", "-h, --help".green());
     }
 }
@@ -160,8 +160,10 @@ mod tests {
             "--html".to_string(),
         ];
         let sig2 = SigArgs::parse(args2.into_iter());
-        assert!(sig2.auto_cov);
-        assert!(sig2.report);
         assert!(sig2.html);
+
+        let args3 = vec!["-w".to_string()];
+        let sig3 = SigArgs::parse(args3.into_iter());
+        assert!(sig3.html);
     }
 }

@@ -134,7 +134,7 @@ fn print_profile(s: &Score) {
     } else { println!("  Test Coverage: {}", "N/A (No coverage data. Run 'cargo sig -a' to auto-generate)".dimmed()); }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
-    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown) or 'cargo sig --html' (HTML) for full reports. 'cargo sig -h' for help.".dimmed());
+    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown) or 'cargo sig -w' (HTML) for full reports. 'cargo sig -h' for help.".dimmed());
 }
 
 pub fn star_string(stars: u8) -> String {
