@@ -6,9 +6,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 pub mod gitignore;
+pub mod html;
 pub mod markdown;
 
 pub use gitignore::ensure_gitignored;
+pub use html::generate_html_report;
 pub use markdown::generate_markdown_report;
 
 pub struct AnalysisResult<'a> {
@@ -33,13 +35,24 @@ pub fn print_all(res: &AnalysisResult) {
 fn print_summary(res: &AnalysisResult) {
     println!("\n{}", "Summary:".bold());
     println!("Total Functions: {}", res.metrics.len());
-    let (mut v, mut i, mut c) = (0, 0, 0);
-    for m in res.metrics {
-        if m.lines_of_code > 15 { v += 1; }
-        if m.parameter_count > 4 { i += 1; }
-        if m.cyclomatic_complexity > 5 { c += 1; }
-    }
+    let (v, i, c) = count_violations(res.metrics);
     println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%", v, i, c, res.dup_res.percentage);
+}
+
+pub(crate) fn count_violations(metrics: &[FunctionMetric]) -> (usize, usize, usize) {
+    let (mut v, mut i, mut c) = (0, 0, 0);
+    for m in metrics {
+        if m.lines_of_code > 15 {
+            v += 1;
+        }
+        if m.parameter_count > 4 {
+            i += 1;
+        }
+        if m.cyclomatic_complexity > 5 {
+            c += 1;
+        }
+    }
+    (v, i, c)
 }
 
 #[rustfmt::skip]
@@ -121,7 +134,7 @@ fn print_profile(s: &Score) {
     } else { println!("  Test Coverage: {}", "N/A (No coverage data. Run 'cargo sig -a' to auto-generate)".dimmed()); }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
-    println!("\n{}", "💡 Tip: Run 'cargo sig -r' to generate a detailed Markdown report or 'cargo sig -h' for help.".dimmed());
+    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown) or 'cargo sig --html' (HTML) for full reports. 'cargo sig -h' for help.".dimmed());
 }
 
 pub fn star_string(stars: u8) -> String {
@@ -165,12 +178,7 @@ fn escape_json(s: &str) -> String {
 
 #[rustfmt::skip]
 fn build_summary_json(res: &AnalysisResult) -> String {
-    let (mut v, mut i, mut c) = (0, 0, 0);
-    for m in res.metrics {
-        if m.lines_of_code > 15 { v += 1; }
-        if m.parameter_count > 4 { i += 1; }
-        if m.cyclomatic_complexity > 5 { c += 1; }
-    }
+    let (v, i, c) = count_violations(res.metrics);
     format!("{{\"total_functions\":{},\"volume_violations\":{},\"interface_violations\":{},\"complexity_violations\":{},\"duplication_pct\":{:.1}}}", res.metrics.len(), v, i, c, res.dup_res.percentage)
 }
 
@@ -198,6 +206,83 @@ pub fn print_json(res: &AnalysisResult) {
     let cov_pct_str = res.score.cov_pct.map_or("null".to_string(), |p| format!("{p:.1}"));
     println!("{{\n  \"summary\": {},\n  \"component_balance\": {{\"is_balanced\":{}}},\n  \"module_coupling\": {{\"ignored_externals\":{},\"fan_out_violations\":{},\"circular_dependencies\":{}}},\n  \"hotspots\": [{}],\n  \"risk_profile\": {{\"moderate_pct\":{:.1},\"high_pct\":{:.1},\"very_high_pct\":{:.1}}},\n  \"rating\": {{\"final_stars\":{},\"code_stars\":{},\"coverage_stars\":{},\"coverage_pct\":{},\"volume_stars\":{},\"total_func_loc\":{},\"max_stars\":7}}\n}}", 
         build_summary_json(res), bal, res.graph.ignored_externals, h_fan, cycles, build_hotspots_json(res), res.score.pct_moderate, res.score.pct_high, res.score.pct_very_high, res.score.stars, res.score.code_stars, cov_stars_str, cov_pct_str, res.score.volume_stars, res.score.total_loc);
+}
+
+pub(crate) fn get_sorted_hotspots(res: &AnalysisResult) -> (Vec<PathBuf>, HashMap<PathBuf, usize>) {
+    let mut fr = HashMap::new();
+    let g = crate::coupling::CouplingGraph::default();
+    for m in res.metrics {
+        *fr.entry(m.file_path.clone()).or_insert(0) +=
+            crate::scoring::categorize_risk(m, &g) as usize;
+    }
+    let mut hs: Vec<_> = fr.keys().cloned().collect();
+    hs.sort_by_key(|k| -((fr.get(k).unwrap_or(&0) * res.churns.get(k).unwrap_or(&0)) as isize));
+    hs.retain(|k| *fr.get(k).unwrap_or(&0) > 0 && *res.churns.get(k).unwrap_or(&0) > 0);
+    (hs, fr)
+}
+
+pub(crate) fn get_coverage_display(
+    p: &std::path::Path,
+    cov: Option<&HashMap<PathBuf, crate::coverage::Coverage>>,
+) -> String {
+    cov.and_then(|cv| cv.get(p))
+        .map_or_else(|| "N/A".to_string(), |c| format!("{:.1}%", c.percent()))
+}
+
+pub(crate) fn hotspot_recommendation(r: usize, c: usize) -> &'static str {
+    match (r > 10, c > 5, r > 5) {
+        (true, true, _) => "Critical: Modular refactoring and test harness required.",
+        (_, _, true) => "High: Split long functions and decrease branching complexity.",
+        _ => "Moderate: Monitor churn and increase unit test coverage.",
+    }
+}
+
+pub(crate) struct HotspotRow<'a> {
+    pub idx: usize,
+    pub rel_path: String,
+    pub risk: usize,
+    pub churn: usize,
+    pub cov: String,
+    pub rec: &'static str,
+    pub _marker: std::marker::PhantomData<&'a ()>,
+}
+
+#[rustfmt::skip]
+pub(crate) fn collect_hotspot_rows<'a>(
+    hs: &'a [PathBuf], fr: &HashMap<PathBuf, usize>, res: &'a AnalysisResult<'a>, root: &std::path::Path,
+) -> Vec<HotspotRow<'a>> {
+    hs.iter().take(10).enumerate().map(|(i, p)| {
+        let rel_path = format_rel_path(p, root);
+        let risk = *fr.get(p).unwrap_or(&0);
+        let churn = *res.churns.get(p).unwrap_or(&0);
+        let cov = get_coverage_display(p, res.cov.as_ref());
+        let rec = hotspot_recommendation(risk, churn);
+        HotspotRow { idx: i + 1, rel_path, risk, churn, cov, rec, _marker: std::marker::PhantomData }
+    }).collect()
+}
+
+pub(crate) fn filter_volume(metrics: &[FunctionMetric]) -> Vec<(&FunctionMetric, usize)> {
+    metrics
+        .iter()
+        .filter(|m| m.lines_of_code > 15)
+        .map(|m| (m, m.lines_of_code))
+        .collect()
+}
+
+pub(crate) fn filter_complexity(metrics: &[FunctionMetric]) -> Vec<(&FunctionMetric, usize)> {
+    metrics
+        .iter()
+        .filter(|m| m.cyclomatic_complexity > 5)
+        .map(|m| (m, m.cyclomatic_complexity))
+        .collect()
+}
+
+pub(crate) fn filter_interface(metrics: &[FunctionMetric]) -> Vec<(&FunctionMetric, usize)> {
+    metrics
+        .iter()
+        .filter(|m| m.parameter_count > 4)
+        .map(|m| (m, m.parameter_count))
+        .collect()
 }
 
 #[cfg(test)]

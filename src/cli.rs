@@ -7,6 +7,7 @@ pub struct SigArgs {
     pub format: String,
     pub auto_cov: bool,
     pub report: bool,
+    pub html: bool,
 }
 
 impl SigArgs {
@@ -24,6 +25,7 @@ impl SigArgs {
             format: "terminal".to_string(),
             auto_cov: false,
             report: false,
+            html: false,
         }
     }
 
@@ -34,11 +36,25 @@ impl SigArgs {
     }
 
     fn apply_flag(&mut self, arg: &str) -> bool {
+        self.apply_report_flag(arg) || self.apply_core_flag(arg)
+    }
+
+    fn apply_report_flag(&mut self, arg: &str) -> bool {
         match arg {
             "-r" | "--report" => {
                 self.report = true;
                 true
             }
+            "--html" => {
+                self.html = true;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn apply_core_flag(&mut self, arg: &str) -> bool {
+        match arg {
             "-a" | "--auto-cov" => {
                 self.auto_cov = true;
                 true
@@ -88,6 +104,7 @@ impl SigArgs {
         println!("  {} Fail if the final rating drops below this threshold (e.g., for CI)", "--fail-below <1-7>".green());
         println!("  {}  Output format: 'terminal' or 'json' [default: terminal]", "--format <format>".green());
         println!("  {}     Generate a full Markdown report (tools/cargo-sig/SIG_REPORT.md)", "-r, --report".green());
+        println!("  {}               Generate a standalone HTML report (tools/cargo-sig/SIG_REPORT.html)", "--html".green());
         println!("  {}         Print this help message\n", "-h, --help".green());
     }
 }
@@ -104,6 +121,7 @@ mod tests {
         assert_eq!(sig.format, "terminal");
         assert!(!sig.auto_cov);
         assert!(!sig.report);
+        assert!(!sig.html);
     }
 
     #[test]
@@ -136,9 +154,14 @@ mod tests {
         assert!(sig.auto_cov);
         assert!(sig.report);
 
-        let args2 = vec!["--auto-cov".to_string(), "--report".to_string()];
+        let args2 = vec![
+            "--auto-cov".to_string(),
+            "--report".to_string(),
+            "--html".to_string(),
+        ];
         let sig2 = SigArgs::parse(args2.into_iter());
         assert!(sig2.auto_cov);
         assert!(sig2.report);
+        assert!(sig2.html);
     }
 }

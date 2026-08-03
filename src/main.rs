@@ -49,18 +49,43 @@ fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let score = scoring::evaluate(&ctx);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup_res, graph: &graph };
     if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
-    if args.report { emit_report(&res, dir)?; }
+    if args.report || args.html { emit_reports(args, &res, dir)?; }
     Ok(score.stars)
 }
 
-fn emit_report(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
+fn emit_reports(
+    args: &SigArgs,
+    res: &report::AnalysisResult,
+    dir: &std::path::Path,
+) -> anyhow::Result<()> {
     report::ensure_gitignored(dir)?;
+    if args.report {
+        emit_md(res, dir)?;
+    }
+    if args.html {
+        emit_html(res, dir)?;
+    }
+    Ok(())
+}
+
+fn emit_md(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
     let path = report::generate_markdown_report(res, dir)?;
-    let rel_path = path.strip_prefix(dir).unwrap_or(&path);
+    let rel = path.strip_prefix(dir).unwrap_or(&path);
     println!(
         "\n{} {}",
         "✅ Full Markdown report generated:".green().bold(),
-        rel_path.display()
+        rel.display()
+    );
+    Ok(())
+}
+
+fn emit_html(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
+    let path = report::generate_html_report(res, dir)?;
+    let rel = path.strip_prefix(dir).unwrap_or(&path);
+    println!(
+        "\n{} {}",
+        "✅ Full HTML report generated:".green().bold(),
+        rel.display()
     );
     Ok(())
 }
@@ -91,6 +116,7 @@ mod tests {
             format: "terminal".to_string(),
             auto_cov: false,
             report: true,
+            html: true,
         };
         let stars = run_app(&args, dir.path()).unwrap();
         assert_eq!(stars, 5); // 5 stars because it's unbalanced (1 file = 100%)

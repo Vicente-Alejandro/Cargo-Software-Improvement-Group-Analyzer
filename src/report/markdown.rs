@@ -1,4 +1,7 @@
-use super::{AnalysisResult, format_rel_path, star_string};
+use super::{
+    AnalysisResult, collect_hotspot_rows, filter_complexity, filter_interface, filter_volume,
+    format_rel_path, get_sorted_hotspots, star_string,
+};
 use crate::analysis::FunctionMetric;
 use crate::scoring::Score;
 use std::collections::HashMap;
@@ -94,51 +97,30 @@ impl MarkdownCtx<'_> {
     }
 
     fn render_volume_table(&mut self) {
-        let rows: Vec<(&FunctionMetric, usize)> = self
-            .res
-            .metrics
-            .iter()
-            .filter(|m| m.lines_of_code > 15)
-            .map(|m| (m, m.lines_of_code))
-            .collect();
         let meta = MetricHeader {
             title: "### 1. Unit Size Violations (> 15 LOC)",
             empty_msg: "*No unit size violations detected. ✅*",
             val_header: "Lines of Code",
         };
-        self.render_metric_table(meta, &rows);
+        self.render_metric_table(meta, &filter_volume(self.res.metrics));
     }
 
     fn render_complexity_table(&mut self) {
-        let rows: Vec<(&FunctionMetric, usize)> = self
-            .res
-            .metrics
-            .iter()
-            .filter(|m| m.cyclomatic_complexity > 5)
-            .map(|m| (m, m.cyclomatic_complexity))
-            .collect();
         let meta = MetricHeader {
             title: "### 2. Unit Complexity Violations (> 5 Branches)",
             empty_msg: "*No unit complexity violations detected. ✅*",
             val_header: "Cyclomatic Complexity",
         };
-        self.render_metric_table(meta, &rows);
+        self.render_metric_table(meta, &filter_complexity(self.res.metrics));
     }
 
     fn render_interface_table(&mut self) {
-        let rows: Vec<(&FunctionMetric, usize)> = self
-            .res
-            .metrics
-            .iter()
-            .filter(|m| m.parameter_count > 4)
-            .map(|m| (m, m.parameter_count))
-            .collect();
         let meta = MetricHeader {
             title: "### 3. Unit Interface Violations (> 4 Parameters)",
             empty_msg: "*No interface parameter violations detected. ✅*",
             val_header: "Parameter Count",
         };
-        self.render_metric_table(meta, &rows);
+        self.render_metric_table(meta, &filter_interface(self.res.metrics));
     }
 
     #[rustfmt::skip]
@@ -182,12 +164,8 @@ impl MarkdownCtx<'_> {
 
     #[rustfmt::skip]
     fn render_hotspot_rows(&mut self, hs: &[PathBuf], fr: &HashMap<PathBuf, usize>) {
-        for (i, p) in hs.iter().take(10).enumerate() {
-            let rel = format_rel_path(p, self.root_dir);
-            let (r, c) = (*fr.get(p).unwrap_or(&0), *self.res.churns.get(p).unwrap_or(&0));
-            let cov = get_coverage_display(p, self.res.cov.as_ref());
-            let rec = hotspot_recommendation(r, c);
-            let _ = writeln!(self.out, "| #{} | `{rel}` | {r} | {c} commits | {cov} | {rec} |", i + 1);
+        for row in collect_hotspot_rows(hs, fr, self.res, self.root_dir) {
+            let _ = writeln!(self.out, "| #{} | `{}` | {} | {} commits | {} | {} |", row.idx, row.rel_path, row.risk, row.churn, row.cov, row.rec);
         }
     }
 
@@ -214,35 +192,6 @@ impl MarkdownCtx<'_> {
             let chain: Vec<String> = c.iter().map(|p| format!("`{}`", format_rel_path(p, self.root_dir))).collect();
             let _ = writeln!(self.out, "  - Cycle #{}: {} -> {}", i + 1, chain.join(" -> "), chain[0]);
         }
-    }
-}
-
-fn get_sorted_hotspots(res: &AnalysisResult) -> (Vec<PathBuf>, HashMap<PathBuf, usize>) {
-    let mut fr = HashMap::new();
-    let g = crate::coupling::CouplingGraph::default();
-    for m in res.metrics {
-        *fr.entry(m.file_path.clone()).or_insert(0) +=
-            crate::scoring::categorize_risk(m, &g) as usize;
-    }
-    let mut hs: Vec<_> = fr.keys().cloned().collect();
-    hs.sort_by_key(|k| -((fr.get(k).unwrap_or(&0) * res.churns.get(k).unwrap_or(&0)) as isize));
-    hs.retain(|k| *fr.get(k).unwrap_or(&0) > 0 && *res.churns.get(k).unwrap_or(&0) > 0);
-    (hs, fr)
-}
-
-fn get_coverage_display(
-    p: &Path,
-    cov: Option<&HashMap<PathBuf, crate::coverage::Coverage>>,
-) -> String {
-    cov.and_then(|cv| cv.get(p))
-        .map_or_else(|| "N/A".to_string(), |c| format!("{:.1}%", c.percent()))
-}
-
-fn hotspot_recommendation(r: usize, c: usize) -> &'static str {
-    match (r > 10, c > 5, r > 5) {
-        (true, true, _) => "🚨 Critical: Immediate modular refactoring and test harness required.",
-        (_, _, true) => "⚠️ High: Split long functions and decrease branching complexity.",
-        _ => "ℹ️ Moderate: Monitor churn and increase unit test coverage.",
     }
 }
 
