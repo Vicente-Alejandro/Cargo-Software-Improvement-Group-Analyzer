@@ -143,6 +143,7 @@ cargo sig
 | `-a`, `--auto-cov` | Enable automatic test coverage generation using `cargo-llvm-cov` | Completed |
 | `-r`, `--report` | Generate a full Markdown report (`tools/cargo-sig/SIG_REPORT.md`) | Completed |
 | `-w`, `--html`, `--web` | Generate a standalone, dark-themed offline HTML report (`tools/cargo-sig/SIG_REPORT.html`) | Completed |
+| `-p`, `--pdf` | Generate a standalone PDF report via headless browser (`tools/cargo-sig/SIG_REPORT.pdf`) | Completed |
 | `--fail-below <1-7>` | Exit non-zero if the rating drops below the threshold (for CI gates) | Completed |
 | `--format json` | Export detailed structured JSON report to standard output | Completed |
 | `-h`, `--help` | Print the CLI help overview | Completed |

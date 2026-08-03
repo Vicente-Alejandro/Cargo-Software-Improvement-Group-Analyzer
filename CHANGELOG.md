@@ -3,9 +3,11 @@
 ## [1.2.5] - 2026-08-03
 
 ### Added
+- **Headless PDF Report Generator (`-p`, `--pdf`)**: Added CLI flag to automatically render and save `tools/cargo-sig/SIG_REPORT.pdf` via stealth auto-detection of native headless browsers (Edge, Chrome, Chromium).
 - **Graceful `cargo-llvm-cov` Detection & Guidance**: Proactive detection of missing `cargo-llvm-cov` tool with explicit installation recommendations across CLI, Markdown, and HTML reports.
 
 ### Fixed
+- **Screen vs Print Header Title**: Separated dashboard title (`Maintainability Dashboard`) for screen/web viewing and audit title (`Software Maintainability Audit Report`) for print/PDF export.
 - **PDF Action Column Removal**: Hidden empty `Action` table column and interactive buttons in `@media print` export.
 - **High-Contrast Print Typography**: Replaced faint/gray code font styles in PDF print mode with crisp, high-contrast dark slate (`#0f172a`) styling.
 - **Top & Bottom Print Margins**: Expanded `@page` print margin buffers (`20mm 15mm`) and container padding to eliminate content clipping on all sheet edges.

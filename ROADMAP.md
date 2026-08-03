@@ -149,9 +149,11 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Proportional Risk Distribution Bar:** Animated risk distribution bar with tooltips and percentage breakdown cards.
 - [x] **Print Media Stylesheet (`@media print`):** Complete `@media print` rules for publication-grade PDF and physical print exporting.
 
-## v1.2.5 — PDF Layout Polish & Graceful Coverage Advisories
+## v1.2.5 — PDF Layout Polish, Native PDF Export & Graceful Coverage Advisories
 **Status:** Completed
 
+- [x] **Headless PDF Generation Flag (`-p`, `--pdf`):** Automated generation and saving of `tools/cargo-sig/SIG_REPORT.pdf` via native headless browser detection.
+- [x] **Screen vs Print Header Separation:** Dynamic document title switching between screen dashboard view and formal print audit report.
 - [x] **Print Action Column Clean Up:** Completely hide interactive action columns and buttons in print export.
 - [x] **High-Contrast Print Typography:** Sharpen font weights and contrast for code snippets and table cells.
 - [x] **Top & Bottom Print Margins:** Expanded page margins to `20mm 15mm` preventing sheet edge clipping.
