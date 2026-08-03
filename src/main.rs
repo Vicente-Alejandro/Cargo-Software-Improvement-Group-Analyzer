@@ -11,6 +11,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::must_use_candidate)]
+#![allow(clippy::struct_excessive_bools)]
 
 pub mod analysis;
 pub mod churn;
@@ -49,7 +50,7 @@ fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let score = scoring::evaluate(&ctx);
     let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup_res, graph: &graph };
     if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
-    if args.report || args.html { emit_reports(args, &res, dir)?; }
+    if args.report || args.html || args.pdf { emit_reports(args, &res, dir)?; }
     Ok(score.stars)
 }
 
@@ -64,6 +65,9 @@ fn emit_reports(
     }
     if args.html {
         emit_html(res, dir)?;
+    }
+    if args.pdf {
+        emit_pdf(res, dir)?;
     }
     Ok(())
 }
@@ -87,6 +91,32 @@ fn emit_html(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Res
         "✅ Full HTML report generated:".green().bold(),
         rel.display()
     );
+    Ok(())
+}
+
+fn emit_pdf(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
+    let html_path = report::generate_html_report(res, dir)?;
+    match report::generate_pdf_report(&html_path, dir) {
+        Ok(pdf_path) => {
+            let rel = pdf_path.strip_prefix(dir).unwrap_or(&pdf_path);
+            println!(
+                "\n{} {}",
+                "✅ Full PDF report generated:".green().bold(),
+                rel.display()
+            );
+        }
+        Err(e) => {
+            let html_rel = html_path.strip_prefix(dir).unwrap_or(&html_path);
+            println!(
+                "\n{} Unable to generate PDF automatically: {e}",
+                "⚠️".yellow().bold()
+            );
+            println!(
+                "💡 Tip: Open '{}' in any web browser and click 'Export PDF / Print'.",
+                html_rel.display()
+            );
+        }
+    }
     Ok(())
 }
 
@@ -117,9 +147,12 @@ mod tests {
             auto_cov: false,
             report: true,
             html: true,
+            pdf: true,
         };
         let stars = run_app(&args, dir.path()).unwrap();
         assert_eq!(stars, 5); // 5 stars because it's unbalanced (1 file = 100%)
+        assert!(dir.path().join("tools/cargo-sig/SIG_REPORT.html").exists());
+        assert!(dir.path().join("tools/cargo-sig/SIG_REPORT.md").exists());
     }
 
     #[test]

@@ -8,10 +8,12 @@ use std::path::PathBuf;
 pub mod gitignore;
 pub mod html;
 pub mod markdown;
+pub mod pdf;
 
 pub use gitignore::ensure_gitignored;
 pub use html::generate_html_report;
 pub use markdown::generate_markdown_report;
+pub use pdf::generate_pdf_report;
 
 pub struct AnalysisResult<'a> {
     pub metrics: &'a [FunctionMetric],
@@ -138,7 +140,7 @@ fn print_profile(s: &Score) {
     }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
-    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown) or 'cargo sig -w' (HTML) for full reports. 'cargo sig -h' for help.".dimmed());
+    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.".dimmed());
 }
 
 pub fn star_string(stars: u8) -> String {

@@ -8,6 +8,7 @@ pub struct SigArgs {
     pub auto_cov: bool,
     pub report: bool,
     pub html: bool,
+    pub pdf: bool,
 }
 
 impl SigArgs {
@@ -26,6 +27,7 @@ impl SigArgs {
             auto_cov: false,
             report: false,
             html: false,
+            pdf: false,
         }
     }
 
@@ -47,6 +49,10 @@ impl SigArgs {
             }
             "-w" | "--html" | "--web" => {
                 self.html = true;
+                true
+            }
+            "-p" | "--pdf" => {
+                self.pdf = true;
                 true
             }
             _ => false,
@@ -105,6 +111,7 @@ impl SigArgs {
         println!("  {}  Output format: 'terminal' or 'json' [default: terminal]", "--format <format>".green());
         println!("  {}     Generate a full Markdown report (tools/cargo-sig/SIG_REPORT.md)", "-r, --report".green());
         println!("  {}   Generate a standalone HTML report (tools/cargo-sig/SIG_REPORT.html)", "-w, --html, --web".green());
+        println!("  {}    Generate a standalone PDF report (tools/cargo-sig/SIG_REPORT.pdf)", "-p, --pdf".green());
         println!("  {}         Print this help message\n", "-h, --help".green());
     }
 }
@@ -122,6 +129,7 @@ mod tests {
         assert!(!sig.auto_cov);
         assert!(!sig.report);
         assert!(!sig.html);
+        assert!(!sig.pdf);
     }
 
     #[test]
@@ -158,12 +166,15 @@ mod tests {
             "--auto-cov".to_string(),
             "--report".to_string(),
             "--html".to_string(),
+            "--pdf".to_string(),
         ];
         let sig2 = SigArgs::parse(args2.into_iter());
         assert!(sig2.html);
+        assert!(sig2.pdf);
 
-        let args3 = vec!["-w".to_string()];
+        let args3 = vec!["-w".to_string(), "-p".to_string()];
         let sig3 = SigArgs::parse(args3.into_iter());
         assert!(sig3.html);
+        assert!(sig3.pdf);
     }
 }
