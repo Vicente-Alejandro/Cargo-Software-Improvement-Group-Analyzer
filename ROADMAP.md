@@ -128,6 +128,11 @@ This release is deliberately scoped to correctness only — no new features — 
 
 - [x] **Dashboard Footer:** Embedded links to GitHub and Crates.io with modern subtle styling.
 
+## v1.2.2 — Brand Text Styling Refinement
+**Status:** Completed
+
+- [x] **Brand Typography:** Restyled `cargo-sig` brand as distinct accent text rather than duplicate link.
+
 ## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
 **Status:** Planned
 
