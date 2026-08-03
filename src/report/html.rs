@@ -447,6 +447,8 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     align-items: center !important;
     page-break-inside: avoid;
     break-inside: avoid;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   .badge, .badge-sig, .card-pill, .tag-crit, .tag-warn, .tag-ok, .cycle-item {
     border-radius: 0 !important;
@@ -505,8 +507,10 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
-    page-break-before: auto !important;
-    break-before: auto !important;
+  }
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
   }
   .section {
     background: #ffffff !important;
@@ -515,8 +519,13 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     box-shadow: none !important;
     padding: 1rem 1.25rem !important;
     margin-bottom: 1.25rem !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .section-header {
+    margin-bottom: 0.75rem !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
   .section-title {
     font-size: 0.95rem !important;
@@ -563,6 +572,18 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     width: 100% !important;
     font-size: 8pt !important;
     border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  thead {
+    display: table-header-group !important;
+  }
+  tfoot {
+    display: table-footer-group !important;
+  }
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   th {
     background: #f8fafc !important;
@@ -584,6 +605,8 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     overflow: visible !important;
     text-overflow: clip !important;
     white-space: nowrap !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   td:first-child code, td:nth-child(2) code {
     white-space: normal !important;
@@ -725,7 +748,7 @@ impl HtmlCtx<'_> {
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n",
         );
         self.out
-            .push_str("<title>SIG Maintainability Audit Dashboard</title>\n");
+            .push_str("<title>SIG Software Maintainability Audit Report</title>\n");
         let _ = writeln!(
             self.out,
             "<style>{CSS}</style>\n</head>\n<body>\n<div class=\"container\">\n"
@@ -743,8 +766,8 @@ impl HtmlCtx<'_> {
         let offset = compute_gauge_offset(s.stars);
         self.out
             .push_str("<header>\n<div class=\"brand-group\">\n<div class=\"badge-row\">\n");
-        self.out.push_str("<span class=\"badge\">SIG Quality Model</span>\n<span class=\"badge badge-sig\">ISO 25010</span>\n</div>\n");
-        self.out.push_str("<h1>Maintainability Dashboard</h1>\n<p class=\"subtitle\">Static code health, cyclomatic complexity, git churn, and coverage intelligence.</p>\n</div>\n");
+        self.out.push_str("<span class=\"badge\">SIG Quality Model</span>\n<span class=\"badge badge-sig\">ISO/IEC 25010</span>\n</div>\n");
+        self.out.push_str("<h1>Software Maintainability Audit Report</h1>\n<p class=\"subtitle\">Comprehensive evaluation of static code health, cyclomatic complexity, git churn hotspots, and test coverage.</p>\n</div>\n");
         self.out.push_str("<div class=\"header-right\">\n<button class=\"btn-action\" onclick=\"window.print()\" title=\"Export PDF or Print Report\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9V2h12v7\"></path><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"></path><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"></rect></svg><span>Export PDF / Print</span></button>\n");
         let _ = writeln!(
             self.out,
@@ -930,7 +953,7 @@ impl HtmlCtx<'_> {
     fn render_table(&mut self, meta: TableMeta, rows: &[(&FunctionMetric, usize)]) {
         let _ = writeln!(
             self.out,
-            "<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">{}</h2></div>",
+            "<div class=\"section print-page-break\"><div class=\"section-header\"><h2 class=\"section-title\">{}</h2></div>",
             meta.title
         );
         if rows.is_empty() {
@@ -954,7 +977,7 @@ impl HtmlCtx<'_> {
 
     fn render_tab_hotspots(&mut self) {
         let (hs, fr) = get_sorted_hotspots(self.res);
-        self.out.push_str("<div id=\"tab-hotspots\" class=\"tab-pane\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">⚡ Hotspots (Risk × Churn Matrix)</h2></div>\n");
+        self.out.push_str("<div id=\"tab-hotspots\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">⚡ Hotspots (Risk × Churn Matrix)</h2></div>\n");
         if hs.is_empty() {
             self.out.push_str("<p class=\"empty-msg\">No high-risk / high-churn hotspots detected. ✅</p></div></div>\n");
             return;
@@ -976,7 +999,7 @@ impl HtmlCtx<'_> {
 
     fn render_tab_duplication(&mut self) {
         let dup = self.res.dup_res;
-        self.out.push_str("<div id=\"tab-duplication\" class=\"tab-pane\">\n<div class=\"section\"><div class=\"section-header\">");
+        self.out.push_str("<div id=\"tab-duplication\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\">");
         let _ = writeln!(
             self.out,
             "<h2 class=\"section-title\">👥 Code Duplication Spans ({:.1}% Total)</h2></div>",
@@ -1002,7 +1025,7 @@ impl HtmlCtx<'_> {
     }
 
     fn render_tab_architecture(&mut self) {
-        self.out.push_str("<div id=\"tab-architecture\" class=\"tab-pane\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">🏗️ Architecture & Component Balance</h2></div><div class=\"arch-card\">\n");
+        self.out.push_str("<div id=\"tab-architecture\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">🏗️ Architecture & Component Balance</h2></div><div class=\"arch-card\">\n");
         if super::is_balanced(self.res.metrics) {
             self.out.push_str("<div class=\"arch-item\"><span>Component Balance</span><span class=\"tag-ok\">BALANCED (&lt; 50% Share Each) ✅</span></div>\n");
         } else {
@@ -1212,7 +1235,7 @@ mod tests {
 
         let html = render_html(&res, dir.path());
         assert!(html.contains("<!DOCTYPE html>"));
-        assert!(html.contains("Maintainability Dashboard"));
+        assert!(html.contains("Software Maintainability Audit Report"));
         assert!(html.contains("7/7"));
         assert!(html.contains("showTab"));
         assert!(html.contains("toggleCode"));
