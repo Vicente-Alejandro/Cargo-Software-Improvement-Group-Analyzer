@@ -50,6 +50,9 @@ body {
   min-height: 100vh;
 }
 .container { max-width: 1200px; margin: 0 auto; }
+.print-only { display: none !important; }
+.screen-only { display: block; }
+span.screen-only { display: inline; }
 header {
   background: var(--surface-glass);
   backdrop-filter: blur(16px);
@@ -429,6 +432,15 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     line-height: 1.35;
     width: 100% !important;
   }
+  .screen-only {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  span.print-only {
+    display: inline !important;
+  }
   .container {
     max-width: 100% !important;
     width: 100% !important;
@@ -748,7 +760,7 @@ impl HtmlCtx<'_> {
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n",
         );
         self.out
-            .push_str("<title>SIG Software Maintainability Audit Report</title>\n");
+            .push_str("<title>SIG Maintainability Audit Dashboard</title>\n");
         let _ = writeln!(
             self.out,
             "<style>{CSS}</style>\n</head>\n<body>\n<div class=\"container\">\n"
@@ -766,8 +778,8 @@ impl HtmlCtx<'_> {
         let offset = compute_gauge_offset(s.stars);
         self.out
             .push_str("<header>\n<div class=\"brand-group\">\n<div class=\"badge-row\">\n");
-        self.out.push_str("<span class=\"badge\">SIG Quality Model</span>\n<span class=\"badge badge-sig\">ISO/IEC 25010</span>\n</div>\n");
-        self.out.push_str("<h1>Software Maintainability Audit Report</h1>\n<p class=\"subtitle\">Comprehensive evaluation of static code health, cyclomatic complexity, git churn hotspots, and test coverage.</p>\n</div>\n");
+        self.out.push_str("<span class=\"badge\">SIG Quality Model</span>\n<span class=\"badge badge-sig\"><span class=\"screen-only\">ISO 25010</span><span class=\"print-only\">ISO/IEC 25010</span></span>\n</div>\n");
+        self.out.push_str("<h1 class=\"screen-only\">Maintainability Dashboard</h1>\n<p class=\"subtitle screen-only\">Static code health, cyclomatic complexity, git churn, and coverage intelligence.</p>\n<h1 class=\"print-only\">Software Maintainability Audit Report</h1>\n<p class=\"subtitle print-only\">Comprehensive evaluation of static code health, cyclomatic complexity, git churn hotspots, and test coverage.</p>\n</div>\n");
         self.out.push_str("<div class=\"header-right\">\n<button class=\"btn-action\" onclick=\"window.print()\" title=\"Export PDF or Print Report\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9V2h12v7\"></path><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"></path><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"></rect></svg><span>Export PDF / Print</span></button>\n");
         let _ = writeln!(
             self.out,
@@ -1235,6 +1247,7 @@ mod tests {
 
         let html = render_html(&res, dir.path());
         assert!(html.contains("<!DOCTYPE html>"));
+        assert!(html.contains("Maintainability Dashboard"));
         assert!(html.contains("Software Maintainability Audit Report"));
         assert!(html.contains("7/7"));
         assert!(html.contains("showTab"));
