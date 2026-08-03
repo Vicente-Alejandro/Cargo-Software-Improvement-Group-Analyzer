@@ -97,13 +97,37 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Full regression pass:** confirm all 6 implemented SIG guidelines plus Churn × Coverage are reflected in the final star math — closes the loop opened in v0.6.0.
 - [x] **Docs sync:** final pass across `README.md`, `ROADMAP.md`, and `Cargo.toml` to guarantee version, star scale, and dependency list all agree — the last gate before `cargo publish` to crates.io.
 
-## v0.7.0 — Auto-Coverage Generation
+## v1.0.0 — Production-Ready Core & Hardening
 **Status:** Completed
 
-- [x] **Zero-config coverage:** if `cargo-llvm-cov` is installed, execute it automatically to generate `coverage.lcov` on the fly instead of expecting the user to run it manually.
-- [x] **Degraded grace message:** if not installed, print a clear tip on how to install it instead of a silent N/A.
+- [x] **Enterprise-Grade Stabilization:** Pedantic clippy compliance, hardened recursion limits, and robust AST error recovery.
+- [x] **Full 1-7 Star Coverage Calibration:** Complete integration of Churn × Coverage hotspots and component architecture scoring.
 
-**Explicitly out of scope for v0.7:** SIG Guideline 10 (Write Clean Code) — too subjective to score without a dedicated lint engine of its own, and already largely covered by `clippy`.
+## v1.1.0 — Dedicated Reporting Subsystem (`SIG_REPORT.md`)
+**Status:** Completed
+
+- [x] **Markdown Report Generation:** Added `-r` / `--report` CLI flag to generate detailed `tools/cargo-sig/SIG_REPORT.md`.
+- [x] **Stealth Tooling Integration:** Automatic workspace `.gitignore` prompt/setup for `tools/cargo-sig/`.
+- [x] **Discovery Prompts:** Clean hint displayed on regular execution guiding users to reporting capabilities.
+
+## v1.1.1 — Report Layout Fixes & Polish
+**Status:** Completed
+
+- [x] **Clean Rating Section:** Consolidated stars and sub-scores in CLI and Markdown views.
+- [x] **Pedantic Refinements:** Streamlined metric presentation.
+
+## v1.2.0 — Offline Standalone HTML Reporting (`SIG_REPORT.html`)
+**Status:** Completed
+
+- [x] **Zero-Dependency HTML Generator:** Native generator with embedded modern CSS and dark mode theme.
+- [x] **Interactive Dashboard Views:** Metric scorecards, risk profile bars, guideline violation tables, and architecture breakdown.
+- [x] **CLI Flag:** Added `--html` option and unified reporting emission pipeline.
+
+## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
+**Status:** Planned
+
+- [x] **Longitudinal Analysis:** Track score progression, LOC growth, and complexity trajectory across Git revisions.
+- [ ] **Delta Badges & Sparklines:** Display delta indicators (`+`, `-`, `=`) compared against the previous audit run.
 
 ---
 
