@@ -15,7 +15,7 @@ const CSS: &str = r#"
   --bg: #090d16;
   --surface-1: #0f172a;
   --surface-2: #1e293b;
-  --surface-glass: rgba(15, 23, 42, 0.8);
+  --surface-glass: rgba(15, 23, 42, 0.85);
   --border: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.04);
   --text-main: #f8fafc;
@@ -84,6 +84,27 @@ header {
 .badge-sig { background: rgba(99, 102, 241, 0.15); color: #818cf8; border-color: rgba(99, 102, 241, 0.3); }
 h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
 .subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+.header-right { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.btn-action {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+.btn-action:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
 .gauge-box {
   display: flex;
   align-items: center;
@@ -93,7 +114,7 @@ h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;
   border-radius: var(--radius);
   border: 1px solid var(--border);
 }
-.gauge-svg { width: 68px; height: 68px; transform: rotate(-90deg); }
+.gauge-svg { width: 68px; height: 68px; transform: rotate(-90deg); flex-shrink: 0; }
 .gauge-bg { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 6; }
 .gauge-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s ease-out; }
 .gauge-text-group { display: flex; flex-direction: column; }
@@ -121,7 +142,7 @@ h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;
 .stars { color: var(--star-gold); letter-spacing: 2px; font-size: 0.95rem; margin-top: 0.35rem; }
 .card-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; }
 
-.tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.75rem; overflow-x: auto; padding-bottom: 0.25rem; }
+.tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.75rem; overflow-x: auto; padding-bottom: 0.35rem; }
 .tab-btn {
   background: transparent;
   border: none;
@@ -196,6 +217,7 @@ th {
   letter-spacing: 0.05em;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
 tr:hover td { background: var(--surface-2); }
@@ -208,11 +230,57 @@ code {
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
+.th-center, .td-center, .cell-center { text-align: center !important; }
 .cell-num { font-family: "JetBrains Mono", monospace; font-weight: 700; color: #fff; }
 .tag-crit { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--red-glow); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
 .tag-warn { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
 .tag-ok { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
 .empty-msg { color: var(--green); font-size: 0.9rem; padding: 1rem; background: var(--green-glow); border-radius: var(--radius-sm); border: 1px solid rgba(16,185,129,0.2); margin-top: 0.5rem; }
+
+.expand-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.expand-btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: #fff;
+}
+.code-expand-row { display: none; }
+.code-expand-row.open { display: table-row; }
+.code-expand-cell {
+  padding: 0.85rem 1.25rem 1.25rem 1.25rem !important;
+  background: rgba(8, 12, 22, 0.95) !important;
+}
+.code-box {
+  background: #040711;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+  max-height: 350px;
+}
+.ln {
+  color: #64748b;
+  user-select: none;
+  margin-right: 0.75rem;
+  font-weight: 500;
+}
 
 .arch-card { display: flex; flex-direction: column; gap: 1rem; }
 .arch-item { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); }
@@ -231,17 +299,68 @@ footer .brand { color: var(--accent); font-weight: 700; }
 footer a { color: var(--text-secondary); text-decoration: none; transition: var(--transition); }
 footer a:hover { color: var(--accent); text-decoration: underline; }
 
+@media (max-width: 768px) {
+  body { padding: 1.25rem 0.75rem; }
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.25rem 1rem;
+    gap: 1.25rem;
+  }
+  .header-right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 1rem;
+  }
+  .btn-action { justify-content: center; width: 100%; }
+  .gauge-box { justify-content: center; width: 100%; }
+  .grid-cards { grid-template-columns: 1fr; gap: 0.85rem; }
+  .tabs { gap: 0.35rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; }
+  .tab-btn { padding: 0.5rem 0.85rem; font-size: 0.82rem; }
+  .section { padding: 1rem; }
+  .legend-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  table { min-width: 580px; }
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+  }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.35rem; }
+  .subtitle { font-size: 0.82rem; }
+  .legend-grid { grid-template-columns: 1fr; }
+  .card-val { font-size: 1.4rem; }
+}
+
 @media print {
-  body { background: #fff !important; color: #0f172a !important; padding: 0 !important; }
-  .container { max-width: 100% !important; }
-  header, .card, .section { background: #fff !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; color: #0f172a !important; break-inside: avoid; }
-  .tabs { display: none !important; }
-  .tab-pane { display: block !important; margin-bottom: 2rem !important; }
+  @page { size: A4 portrait; margin: 1.2cm; }
+  body { background: #fff !important; color: #0f172a !important; padding: 0 !important; font-size: 10pt; }
+  .container { max-width: 100% !important; margin: 0 !important; }
+  header, .card, .section { background: #fff !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; color: #0f172a !important; }
+  .btn-action, .tabs, .expand-btn { display: none !important; }
+  .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    page-break-before: always;
+    break-before: page;
+  }
+  #tab-overview { page-break-before: avoid !important; break-before: auto !important; }
+  .code-expand-row { display: table-row !important; }
+  .code-expand-cell { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+  .code-box { background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; max-height: none !important; }
+  .ln { color: #64748b !important; }
+  table { min-width: 100% !important; page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
   h1, .card-val, .gauge-val, .section-title { color: #0f172a !important; }
   code { background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
   th { background: #f8fafc !important; color: #475569 !important; }
   .legend-card, .arch-item { background: #f8fafc !important; border-color: #e2e8f0 !important; }
   .legend-name, .legend-pct { color: #0f172a !important; }
+  footer { display: none !important; }
 }
 "#;
 
@@ -311,9 +430,10 @@ impl HtmlCtx<'_> {
             .push_str("<header>\n<div class=\"brand-group\">\n<div class=\"badge-row\">\n");
         self.out.push_str("<span class=\"badge\">SIG Quality Model</span>\n<span class=\"badge badge-sig\">ISO 25010</span>\n</div>\n");
         self.out.push_str("<h1>Maintainability Dashboard</h1>\n<p class=\"subtitle\">Static code health, cyclomatic complexity, git churn, and coverage intelligence.</p>\n</div>\n");
+        self.out.push_str("<div class=\"header-right\">\n<button class=\"btn-action\" onclick=\"window.print()\" title=\"Export PDF or Print Report\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9V2h12v7\"></path><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"></path><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"></rect></svg><span>Export PDF / Print</span></button>\n");
         let _ = writeln!(
             self.out,
-            "<div class=\"gauge-box\"><svg class=\"gauge-svg\" viewBox=\"0 0 100 100\"><circle class=\"gauge-bg\" cx=\"50\" cy=\"50\" r=\"42\"></circle><circle class=\"gauge-fill\" cx=\"50\" cy=\"50\" r=\"42\" stroke=\"{color}\" stroke-dasharray=\"263.89\" stroke-dashoffset=\"{offset:.1}\"></circle></svg><div class=\"gauge-text-group\"><span class=\"gauge-val\">{}/7</span><span class=\"gauge-label\">Overall Rating</span></div></div></header>\n",
+            "<div class=\"gauge-box\"><svg class=\"gauge-svg\" viewBox=\"0 0 100 100\"><circle class=\"gauge-bg\" cx=\"50\" cy=\"50\" r=\"42\"></circle><circle class=\"gauge-fill\" cx=\"50\" cy=\"50\" r=\"42\" stroke=\"{color}\" stroke-dasharray=\"263.89\" stroke-dashoffset=\"{offset:.1}\"></circle></svg><div class=\"gauge-text-group\"><span class=\"gauge-val\">{}/7</span><span class=\"gauge-label\">Overall Rating</span></div></div></div></header>\n",
             s.stars
         );
     }
@@ -453,6 +573,7 @@ impl HtmlCtx<'_> {
 
     fn render_volume_table(&mut self) {
         let meta = TableMeta {
+            prefix: "vol",
             title: "📏 1. Unit Size Violations (> 15 LOC)",
             empty_msg: "No unit size violations detected. ✅",
             val_header: "Lines of Code",
@@ -464,6 +585,7 @@ impl HtmlCtx<'_> {
 
     fn render_complexity_table(&mut self) {
         let meta = TableMeta {
+            prefix: "comp",
             title: "🔀 2. Unit Complexity Violations (> 5 Branches)",
             empty_msg: "No unit complexity violations detected. ✅",
             val_header: "Complexity",
@@ -475,6 +597,7 @@ impl HtmlCtx<'_> {
 
     fn render_interface_table(&mut self) {
         let meta = TableMeta {
+            prefix: "int",
             title: "🔌 3. Unit Interface Violations (> 4 Parameters)",
             empty_msg: "No interface parameter violations detected. ✅",
             val_header: "Parameters",
@@ -500,16 +623,11 @@ impl HtmlCtx<'_> {
         }
         let _ = writeln!(
             self.out,
-            "<div class=\"table-wrap\"><table><thead><tr><th>File</th><th>Function</th><th>Line</th><th>{}</th><th>Severity</th></tr></thead><tbody>",
+            "<div class=\"table-wrap\"><table><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center\">Action</th></tr></thead><tbody>",
             meta.val_header
         );
-        for (m, val) in rows {
-            let rel = format_rel_path(&m.file_path, self.root_dir);
-            let _ = writeln!(
-                self.out,
-                "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td>L{}</td><td class=\"cell-num\">{val}</td><td><span class=\"{}\">{}</span></td></tr>",
-                m.function_name, m.start_line, meta.tag_cls, meta.tag_label
-            );
+        for (i, row_data) in rows.iter().enumerate() {
+            render_table_row(self.out, &meta, *row_data, i + 1, self.root_dir);
         }
         self.out.push_str("</tbody></table></div></div>\n");
     }
@@ -521,7 +639,7 @@ impl HtmlCtx<'_> {
             self.out.push_str("<p class=\"empty-msg\">No high-risk / high-churn hotspots detected. ✅</p></div></div>\n");
             return;
         }
-        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th>Rank</th><th>File</th><th>Risk Points</th><th>Git Churn</th><th>Coverage</th><th>Recommendation</th></tr></thead><tbody>\n");
+        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th class=\"th-center\">Rank</th><th>File</th><th class=\"th-center\">Risk Points</th><th class=\"th-center\">Git Churn</th><th class=\"th-center\">Coverage</th><th>Recommendation</th></tr></thead><tbody>\n");
         self.render_hotspot_rows(&hs, &fr);
         self.out.push_str("</tbody></table></div></div></div>\n");
     }
@@ -530,7 +648,7 @@ impl HtmlCtx<'_> {
         for row in collect_hotspot_rows(hs, fr, self.res, self.root_dir) {
             let _ = writeln!(
                 self.out,
-                "<tr><td class=\"cell-num\">#{}</td><td><code>{}</code></td><td class=\"cell-num\">{}</td><td>{} commits</td><td class=\"cell-num\">{}</td><td><span class=\"tag-warn\">{}</span></td></tr>",
+                "<tr><td class=\"cell-center cell-num\">#{}</td><td><code>{}</code></td><td class=\"cell-center cell-num\">{}</td><td class=\"cell-center\">{} commits</td><td class=\"cell-center cell-num\">{}</td><td><span class=\"tag-warn\">{}</span></td></tr>",
                 row.idx, row.rel_path, row.risk, row.churn, row.cov, row.rec
             );
         }
@@ -550,13 +668,13 @@ impl HtmlCtx<'_> {
             );
             return;
         }
-        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th>File</th><th>Line Span</th><th>Duplicated Lines</th><th>Status</th></tr></thead><tbody>\n");
+        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th>File</th><th class=\"th-center\">Line Span</th><th class=\"th-center\">Duplicated Lines</th><th class=\"th-center\">Status</th></tr></thead><tbody>\n");
         for b in &dup.blocks {
             let rel = format_rel_path(&b.file_path, self.root_dir);
             let lines = (b.end_line - b.start_line) + 1;
             let _ = writeln!(
                 self.out,
-                "<tr><td><code>{rel}</code></td><td>L{}-L{}</td><td class=\"cell-num\">{lines} lines</td><td><span class=\"tag-warn\">DUPLICATE</span></td></tr>",
+                "<tr><td><code>{rel}</code></td><td class=\"cell-center\">L{}-L{}</td><td class=\"cell-center cell-num\">{lines} lines</td><td class=\"cell-center\"><span class=\"tag-warn\">DUPLICATE</span></td></tr>",
                 b.start_line, b.end_line
             );
         }
@@ -608,12 +726,86 @@ function showTab(tabId) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(tabId);
   if (target) target.classList.add('active');
-  const clicked = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+  const clicked = Array.from(document.querySelectorAll('.tab-btn')).find(b => {
+    const attr = b.getAttribute('onclick');
+    return attr && attr.includes(tabId);
+  });
   if (clicked) clicked.classList.add('active');
+}
+function toggleCode(btn, rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const isOpen = row.classList.toggle('open');
+  btn.innerHTML = isOpen ? '▲ Hide Code' : '🔍 View Code';
 }
 </script>
 ");
     }
+}
+
+fn render_table_row(
+    out: &mut String,
+    meta: &TableMeta,
+    (m, val): (&FunctionMetric, usize),
+    idx: usize,
+    root: &Path,
+) {
+    let rel = format_rel_path(&m.file_path, root);
+    let row_id = format!("{}-code-{idx}", meta.prefix);
+    let source = read_function_source(&m.file_path, m.start_line, m.lines_of_code);
+    let _ = writeln!(
+        out,
+        "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td class=\"cell-center\">L{}</td><td class=\"cell-center cell-num\">{val}</td><td class=\"cell-center\"><span class=\"{}\">{}</span></td><td class=\"cell-center\"><button class=\"expand-btn\" onclick=\"toggleCode(this, '{row_id}')\">🔍 View Code</button></td></tr>",
+        m.function_name, m.start_line, meta.tag_cls, meta.tag_label
+    );
+    let _ = writeln!(
+        out,
+        "<tr id=\"{row_id}\" class=\"code-expand-row\"><td colspan=\"6\" class=\"code-expand-cell\"><pre class=\"code-box\"><code>{source}</code></pre></td></tr>"
+    );
+}
+
+fn read_function_source(file_path: &Path, start_line: usize, loc: usize) -> String {
+    if start_line == 0 || loc == 0 {
+        return String::from("<em>Source line data unavailable</em>");
+    }
+    let Ok(content) = fs::read_to_string(file_path) else {
+        return String::from("<em>Source file unavailable</em>");
+    };
+    format_source_lines(&content, start_line, loc)
+}
+
+fn format_source_lines(content: &str, start_line: usize, loc: usize) -> String {
+    let lines: Vec<&str> = content.lines().collect();
+    let start_idx = start_line.saturating_sub(1);
+    let end_idx = (start_idx + loc).min(lines.len());
+    if start_idx >= lines.len() {
+        return String::from("<em>Source range out of bounds</em>");
+    }
+    let mut code_block = String::with_capacity(loc * 40);
+    for (i, line) in lines[start_idx..end_idx].iter().enumerate() {
+        let line_no = start_line + i;
+        let escaped = escape_html_str(line);
+        let _ = writeln!(
+            code_block,
+            "<span class=\"ln\">{line_no:>4} |</span> {escaped}"
+        );
+    }
+    code_block
+}
+
+fn escape_html_str(s: &str) -> String {
+    let mut escaped = String::with_capacity(s.len() + 10);
+    for c in s.chars() {
+        match c {
+            '&' => escaped.push_str("&amp;"),
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            '"' => escaped.push_str("&quot;"),
+            '\'' => escaped.push_str("&#39;"),
+            _ => escaped.push(c),
+        }
+    }
+    escaped
 }
 
 fn compute_gauge_offset(stars: u8) -> f64 {
@@ -653,6 +845,7 @@ fn get_star_pill(stars: u8) -> StarPill {
 }
 
 struct TableMeta<'a> {
+    prefix: &'a str,
     title: &'a str,
     empty_msg: &'a str,
     val_header: &'a str,
@@ -697,16 +890,26 @@ mod tests {
         assert!(html.contains("Maintainability Dashboard"));
         assert!(html.contains("7/7"));
         assert!(html.contains("showTab"));
+        assert!(html.contains("toggleCode"));
+        assert!(html.contains("Export PDF / Print"));
     }
 
     #[test]
     fn test_render_html_with_data() {
         let dir = tempdir().unwrap();
+        let main_file = dir.path().join("src/main.rs");
+        fs::create_dir_all(main_file.parent().unwrap()).unwrap();
+        fs::write(
+            &main_file,
+            "fn test_fn() {\n    println!(\"hello\");\n}\n",
+        )
+        .unwrap();
+
         let m1 = FunctionMetric {
-            file_path: dir.path().join("src/main.rs"),
+            file_path: main_file,
             function_name: "test_fn".to_string(),
             start_line: 1,
-            lines_of_code: 20,
+            lines_of_code: 3,
             parameter_count: 5,
             cyclomatic_complexity: 6,
         };
@@ -723,8 +926,8 @@ mod tests {
             percentage: 3.5,
             blocks: vec![crate::duplication::DuplicationBlock {
                 file_path: dir.path().join("src/main.rs"),
-                start_line: 10,
-                end_line: 25,
+                start_line: 1,
+                end_line: 3,
             }],
         };
         let mut edges = HashMap::new();
@@ -759,7 +962,9 @@ mod tests {
         let html = render_html(&res, dir.path());
         assert!(html.contains("src/main.rs"));
         assert!(html.contains("test_fn"));
-        assert!(html.contains("CRITICAL"));
+        assert!(html.contains("WARNING"));
+        assert!(html.contains("View Code"));
+        assert!(html.contains("hello"));
 
         let report_path = generate_html_report(&res, dir.path()).unwrap();
         assert!(report_path.exists());
@@ -771,5 +976,18 @@ mod tests {
         assert_eq!(get_gauge_color(7), "#10b981");
         assert_eq!(get_gauge_color(4), "#f59e0b");
         assert_eq!(get_gauge_color(2), "#f43f5e");
+    }
+
+    #[test]
+    fn test_read_function_source() {
+        let dir = tempdir().unwrap();
+        let f = dir.path().join("foo.rs");
+        fs::write(&f, "fn foo() {\n    let x = 1 < 2;\n}\n").unwrap();
+        let src = read_function_source(&f, 1, 3);
+        assert!(src.contains("1 &lt; 2"));
+        assert!(src.contains("1 |"));
+
+        let empty = read_function_source(&f, 0, 0);
+        assert!(empty.contains("unavailable"));
     }
 }
