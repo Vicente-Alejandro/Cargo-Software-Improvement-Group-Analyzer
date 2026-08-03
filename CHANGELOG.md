@@ -1,5 +1,19 @@
 # Changelog
  
+## [1.2.4] - 2026-08-03
+
+### Added
+- **Executive HTML Dashboard**: Redesigned standalone report (`tools/cargo-sig/SIG_REPORT.html`) with high-contrast glassmorphic design system adhering to *Refactoring UI* and *Information Dashboard Design*.
+- **Dynamic SVG Rating Gauge**: Embedded vector radial gauge for instantaneous 1–7 star maintainability visualization.
+- **Interactive Tab Navigation**: Zero-dependency tabs for *Overview*, *Violations*, *Hotspots Matrix*, *Code Duplication*, and *Architecture*.
+- **Multi-tier Risk Distribution Bar**: Visual risk distribution meter with proportional tier fills and qualitative metric cards.
+- **Print & PDF Stylesheet (`@media print`)**: Publication-grade print media rules for clean white background rendering and unbroken pagination.
+
+## [1.2.3] - 2026-08-02
+
+### Added
+- **Web Report Shorthand (`-w` / `--web`)**: Added CLI flag aliases for fast HTML report generation.
+
 ## [1.1.1] - 2026-08-01
 
 ### Refactored

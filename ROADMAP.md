@@ -139,6 +139,16 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Ergonomic CLI Flags:** Added `-w` and `--web` shorthands for HTML report generation.
 - [x] **Unified CLI Hints:** Updated terminal discovery hints and `--help` options table.
 
+## v1.2.4 — Executive HTML Dashboard & Design System Overhaul
+**Status:** Completed
+
+- [x] **Information Architecture & Hierarchy:** Designed executive macro-to-micro dashboard layout following Stephen Few (*Information Dashboard Design*) and Adam Wathan (*Refactoring UI*).
+- [x] **Dynamic SVG Score Gauge:** Embedded SVG radial progress gauge displaying 1–7 star maintainability score with semantic tier coloring.
+- [x] **Glassmorphic Design Tokens:** Structured modern dark palette, subtle translucent surfaces, responsive cards, and clean typography tokens (`Inter` + `JetBrains Mono`).
+- [x] **Interactive Tab Navigation:** Zero-dependency interactive views (*Overview*, *Violations*, *Hotspots Matrix*, *Duplication*, *Architecture*).
+- [x] **Proportional Risk Distribution Bar:** Animated risk distribution bar with tooltips and percentage breakdown cards.
+- [x] **Print Media Stylesheet (`@media print`):** Complete `@media print` rules for publication-grade PDF and physical print exporting.
+
 ## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
 **Status:** Planned
 
