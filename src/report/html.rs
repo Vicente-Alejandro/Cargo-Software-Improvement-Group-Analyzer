@@ -422,6 +422,9 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   body {
     background: #ffffff !important;
@@ -431,6 +434,9 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     font-size: 8.5pt;
     line-height: 1.35;
     width: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   .screen-only {
     display: none !important;
