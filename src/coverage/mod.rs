@@ -161,9 +161,9 @@ mod tests {
     #[test]
     fn test_coverage_percent() {
         let cov = Coverage { hit: 5, total: 10 };
-        assert_eq!(cov.percent(), 50.0);
+        assert!((cov.percent() - 50.0).abs() < f32::EPSILON);
         let cov_empty = Coverage { hit: 0, total: 0 };
-        assert_eq!(cov_empty.percent(), 100.0);
+        assert!((cov_empty.percent() - 100.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -190,11 +190,11 @@ mod tests {
         churns.insert(path.clone(), 10);
 
         let result = churn_weighted_coverage(&cov, &churns);
-        assert_eq!(result, 50.0);
+        assert!((result - 50.0).abs() < f32::EPSILON);
 
         let churns_empty = HashMap::new();
         let result_fallback = churn_weighted_coverage(&cov, &churns_empty);
-        assert_eq!(result_fallback, 50.0);
+        assert!((result_fallback - 50.0).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -219,6 +219,6 @@ mod tests {
     fn test_generate_lcov() {
         let dir = tempfile::tempdir().unwrap();
         let result = generate_lcov(dir.path());
-        assert_eq!(result, false);
+        assert!(!result);
     }
 }

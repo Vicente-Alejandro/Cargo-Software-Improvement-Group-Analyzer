@@ -466,7 +466,7 @@ mod tests {
         };
 
         print_hotspots(&res);
-        print_profile(&res.score);
+        print_profile(res.score);
 
         let json = build_hotspots_json(&res);
         assert!(json.contains("risk_points"));

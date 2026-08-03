@@ -201,7 +201,7 @@ mod tests {
         writeln!(f2, "a\nb\nc\nd\ne\nf\ng\nh").unwrap();
 
         let res = calculate_duplication(&[file1, file2]);
-        assert_eq!(res.percentage, 0.0);
+        assert!(res.percentage.abs() < f32::EPSILON);
         assert!(res.blocks.is_empty());
     }
 
@@ -217,7 +217,7 @@ mod tests {
         writeln!(f2, "a\nb\nc\nd\ne\nf\ng").unwrap();
 
         let res = calculate_duplication(&[file1, file2]);
-        assert_eq!(res.percentage, 100.0);
+        assert!((res.percentage - 100.0).abs() < f32::EPSILON);
         assert_eq!(res.blocks.len(), 2);
     }
 
@@ -233,6 +233,6 @@ mod tests {
         writeln!(f2, "a\nb\nc\nd\ne").unwrap();
 
         let res = calculate_duplication(&[file1, file2]);
-        assert_eq!(res.percentage, 0.0);
+        assert!(res.percentage.abs() < f32::EPSILON);
     }
 }

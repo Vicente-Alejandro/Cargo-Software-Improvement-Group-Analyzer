@@ -98,10 +98,10 @@ mod tests {
         let mut file3 = File::create(&git_file).unwrap();
         writeln!(file3, "fn ignore() {{}}").unwrap();
 
-        let mut files = Vec::new();
-        gather_files(dir.path(), &mut files).unwrap();
+        let mut gathered = Vec::new();
+        gather_files(dir.path(), &mut gathered).unwrap();
 
-        assert_eq!(files.len(), 2);
+        assert_eq!(gathered.len(), 2);
     }
 
     #[test]

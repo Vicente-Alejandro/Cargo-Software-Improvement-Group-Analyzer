@@ -252,13 +252,14 @@ mod tests {
             Coverage { hit: 5, total: 10 },
         );
         let cov = Some(cov_map);
-        let mut dup_res = crate::duplication::DuplicationResult::default();
-        dup_res.percentage = 5.0;
-        dup_res.blocks.push(crate::duplication::DuplicationBlock {
-            file_path: dir.path().join("src/lib.rs"),
-            start_line: 1,
-            end_line: 10,
-        });
+        let dup_res = crate::duplication::DuplicationResult {
+            percentage: 5.0,
+            blocks: vec![crate::duplication::DuplicationBlock {
+                file_path: dir.path().join("src/lib.rs"),
+                start_line: 1,
+                end_line: 10,
+            }],
+        };
 
         let graph = crate::coupling::CouplingGraph::default();
         let score = Score {
