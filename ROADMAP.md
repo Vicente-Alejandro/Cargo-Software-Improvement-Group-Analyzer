@@ -133,6 +133,12 @@ This release is deliberately scoped to correctness only — no new features — 
 
 - [x] **Brand Typography:** Restyled `cargo-sig` brand as distinct accent text rather than duplicate link.
 
+## v1.2.3 — Web Report Shorthand (`-w` / `--web`)
+**Status:** Completed
+
+- [x] **Ergonomic CLI Flags:** Added `-w` and `--web` shorthands for HTML report generation.
+- [x] **Unified CLI Hints:** Updated terminal discovery hints and `--help` options table.
+
 ## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
 **Status:** Planned
 
