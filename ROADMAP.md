@@ -123,6 +123,11 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Interactive Dashboard Views:** Metric scorecards, risk profile bars, guideline violation tables, and architecture breakdown.
 - [x] **CLI Flag:** Added `--html` option and unified reporting emission pipeline.
 
+## v1.2.1 — HTML Footer Links & Polish
+**Status:** Completed
+
+- [x] **Dashboard Footer:** Embedded links to GitHub and Crates.io with modern subtle styling.
+
 ## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
 **Status:** Planned
 
