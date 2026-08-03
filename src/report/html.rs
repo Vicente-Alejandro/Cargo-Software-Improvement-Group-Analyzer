@@ -250,11 +250,51 @@ code {
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.th-center, .td-center, .cell-center { text-align: center !important; }
+.th-center, .td-center, .cell-center {
+  text-align: center !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
 .cell-num { font-family: "JetBrains Mono", monospace; font-weight: 700; color: #fff; }
-.tag-crit { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--red-glow); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
-.tag-warn { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
-.tag-ok { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.tag-crit {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  background: var(--red-glow);
+  color: var(--red);
+  border: 1px solid rgba(244,63,94,0.3);
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+.tag-warn {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  background: var(--amber-glow);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.3);
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+.tag-ok {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  background: var(--green-glow);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.3);
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
 .empty-msg { color: var(--green); font-size: 0.9rem; padding: 1rem; background: var(--green-glow); border-radius: var(--radius-sm); border: 1px solid rgba(16,185,129,0.2); margin-top: 0.5rem; }
 
 .expand-btn {
@@ -375,7 +415,7 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
 @media print {
   @page {
     size: A4 portrait;
-    margin: 20mm 15mm 20mm 15mm;
+    margin: 15mm 15mm 15mm 15mm;
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
@@ -385,26 +425,31 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     color: #0f172a !important;
     padding: 0 !important;
     margin: 0 !important;
-    font-size: 9pt;
-    line-height: 1.4;
+    font-size: 8.5pt;
+    line-height: 1.35;
+    width: 100% !important;
   }
   .container {
     max-width: 100% !important;
     width: 100% !important;
-    margin: 0 auto !important;
-    padding: 4mm 0 8mm 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   header {
     background: #ffffff !important;
-    border: 1.5px solid #cbd5e1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
-    padding: 1.25rem 1.5rem !important;
-    margin-bottom: 1.5rem !important;
+    padding: 1rem 1.25rem !important;
+    margin-bottom: 1.25rem !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+  .badge, .badge-sig, .card-pill, .tag-crit, .tag-warn, .tag-ok, .cycle-item {
+    border-radius: 0 !important;
   }
   .btn-action, .tabs, .expand-btn, .col-action, th.col-action, td.col-action, col.col-action {
     display: none !important;
@@ -416,41 +461,45 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   }
   .gauge-box {
     background: #f8fafc !important;
-    border: 1.5px solid #cbd5e1 !important;
-    padding: 0.5rem 1rem !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
+    padding: 0.4rem 0.85rem !important;
   }
   .gauge-svg {
-    width: 56px !important;
-    height: 56px !important;
+    width: 52px !important;
+    height: 52px !important;
   }
   .grid-cards {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.85rem !important;
-    margin-bottom: 1.5rem !important;
+    gap: 0.65rem !important;
+    margin-bottom: 1.25rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
   .card {
     background: #ffffff !important;
-    border: 1.5px solid #cbd5e1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
-    padding: 0.85rem 1rem !important;
+    padding: 0.75rem 0.85rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
   .card-title {
     color: #475569 !important;
     font-weight: 700 !important;
+    font-size: 7pt !important;
   }
   .card-val {
-    font-size: 1.35rem !important;
+    font-size: 1.2rem !important;
     font-weight: 800 !important;
     color: #0f172a !important;
   }
   .card-sub {
     color: #475569 !important;
     font-weight: 600 !important;
+    font-size: 7pt !important;
   }
   .tab-pane {
     display: block !important;
@@ -461,79 +510,136 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   }
   .section {
     background: #ffffff !important;
-    border: 1.5px solid #cbd5e1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
-    padding: 1.25rem 1.5rem !important;
-    margin-bottom: 1.75rem !important;
+    padding: 1rem 1.25rem !important;
+    margin-bottom: 1.25rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
   .section-title {
-    font-size: 1.05rem !important;
+    font-size: 0.95rem !important;
     font-weight: 800 !important;
     color: #0f172a !important;
   }
+  .risk-bar {
+    border-radius: 0 !important;
+    height: 10px !important;
+    margin: 0.75rem 0 0.5rem 0 !important;
+  }
+  .legend-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-top: 0.75rem !important;
+  }
+  .legend-card, .arch-item {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0 !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .legend-name {
+    color: #475569 !important;
+    font-weight: 700 !important;
+    font-size: 7.5pt !important;
+  }
+  .legend-pct {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 9pt !important;
+  }
   .table-wrap {
     overflow: visible !important;
-    margin-top: 0.75rem !important;
+    margin-top: 0.65rem !important;
     width: 100% !important;
   }
+  colgroup {
+    display: none !important;
+  }
   table {
-    table-layout: fixed !important;
+    table-layout: auto !important;
     width: 100% !important;
-    font-size: 8.5pt !important;
+    font-size: 8pt !important;
     border-collapse: collapse !important;
   }
   th {
     background: #f8fafc !important;
     color: #0f172a !important;
     font-weight: 800 !important;
-    padding: 0.5rem 0.65rem !important;
+    padding: 0.45rem 0.6rem !important;
     border-bottom: 2px solid #cbd5e1 !important;
-    font-size: 8pt !important;
+    font-size: 7.5pt !important;
     letter-spacing: 0.05em !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
   }
   td {
-    padding: 0.55rem 0.65rem !important;
+    padding: 0.45rem 0.6rem !important;
     border-bottom: 1px solid #e2e8f0 !important;
     color: #0f172a !important;
     font-weight: 500 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+  td:first-child code, td:nth-child(2) code {
     white-space: normal !important;
+    word-break: break-word !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
   td code {
     color: #0f172a !important;
     background: #f1f5f9 !important;
     border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
     font-weight: 600 !important;
-    padding: 0.15rem 0.4rem !important;
+    padding: 0.1rem 0.35rem !important;
   }
   .cell-num {
     color: #0f172a !important;
     font-weight: 700 !important;
+    text-align: center !important;
   }
   .tag-crit {
     background: #fee2e2 !important;
     color: #991b1b !important;
     border: 1px solid #f87171 !important;
     font-weight: 800 !important;
-    font-size: 7pt !important;
+    font-size: 6.8pt !important;
     padding: 0.15rem 0.45rem !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: inline-block !important;
   }
   .tag-warn {
     background: #fef3c7 !important;
     color: #92400e !important;
     border: 1px solid #fbbf24 !important;
     font-weight: 800 !important;
-    font-size: 7pt !important;
+    font-size: 6.8pt !important;
     padding: 0.15rem 0.45rem !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: inline-block !important;
   }
   .tag-ok {
     background: #d1fae5 !important;
     color: #065f46 !important;
     border: 1px solid #34d399 !important;
     font-weight: 800 !important;
-    font-size: 7pt !important;
+    font-size: 6.8pt !important;
     padding: 0.15rem 0.45rem !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: inline-block !important;
   }
   .code-expand-row {
     display: none !important;
@@ -544,16 +650,17 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   .code-expand-cell {
     background: #f8fafc !important;
     border-color: #cbd5e1 !important;
-    padding: 0.6rem 0.85rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
   .code-box {
     background: #f1f5f9 !important;
     color: #0f172a !important;
     border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
     max-height: none !important;
-    font-size: 7.5pt !important;
-    line-height: 1.4 !important;
-    padding: 0.6rem !important;
+    font-size: 7pt !important;
+    line-height: 1.35 !important;
+    padding: 0.5rem !important;
     white-space: pre-wrap !important;
     word-break: break-word !important;
   }
@@ -565,19 +672,6 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   .ln {
     color: #475569 !important;
     font-weight: 700 !important;
-  }
-  .legend-card, .arch-item {
-    background: #f8fafc !important;
-    border: 1.5px solid #e2e8f0 !important;
-    padding: 0.65rem 0.85rem !important;
-  }
-  .legend-name {
-    color: #475569 !important;
-    font-weight: 700 !important;
-  }
-  .legend-pct {
-    color: #0f172a !important;
-    font-weight: 800 !important;
   }
   footer {
     display: none !important;
@@ -849,7 +943,7 @@ impl HtmlCtx<'_> {
         }
         let _ = writeln!(
             self.out,
-            "<div class=\"table-wrap\"><table><colgroup><col style=\"width:28%\"><col style=\"width:26%\"><col style=\"width:10%\"><col style=\"width:14%\"><col style=\"width:10%\"><col class=\"col-action\" style=\"width:12%\"></colgroup><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center col-action\">Action</th></tr></thead><tbody>",
+            "<div class=\"table-wrap\"><table><colgroup><col style=\"width:25%\"><col style=\"width:23%\"><col style=\"width:9%\"><col style=\"width:15%\"><col style=\"width:14%\"><col class=\"col-action\" style=\"width:14%\"></colgroup><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center col-action\">Action</th></tr></thead><tbody>",
             meta.val_header
         );
         for (i, row_data) in rows.iter().enumerate() {
