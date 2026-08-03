@@ -375,68 +375,82 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm;
+    margin: 20mm 15mm 20mm 15mm;
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
   }
   body {
-    background: #fff !important;
+    background: #ffffff !important;
     color: #0f172a !important;
     padding: 0 !important;
     margin: 0 !important;
     font-size: 9pt;
-    line-height: 1.35;
+    line-height: 1.4;
   }
   .container {
     max-width: 100% !important;
     width: 100% !important;
-    margin: 0 !important;
-    padding: 0 4mm !important;
+    margin: 0 auto !important;
+    padding: 4mm 0 8mm 0 !important;
   }
   header {
-    background: #fff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     box-shadow: none !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 1rem !important;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 1.5rem !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .btn-action, .tabs, .expand-btn {
+  .btn-action, .tabs, .expand-btn, .col-action, th.col-action, td.col-action, col.col-action {
     display: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    visibility: hidden !important;
   }
   .gauge-box {
     background: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
     padding: 0.5rem 1rem !important;
   }
   .gauge-svg {
-    width: 54px !important;
-    height: 54px !important;
+    width: 56px !important;
+    height: 56px !important;
   }
   .grid-cards {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.75rem !important;
-    margin-bottom: 1.25rem !important;
+    gap: 0.85rem !important;
+    margin-bottom: 1.5rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
   .card {
-    background: #fff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     box-shadow: none !important;
-    padding: 0.75rem 1rem !important;
+    padding: 0.85rem 1rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
+  .card-title {
+    color: #475569 !important;
+    font-weight: 700 !important;
+  }
   .card-val {
-    font-size: 1.3rem !important;
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
     color: #0f172a !important;
+  }
+  .card-sub {
+    color: #475569 !important;
+    font-weight: 600 !important;
   }
   .tab-pane {
     display: block !important;
@@ -446,41 +460,80 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     break-before: auto !important;
   }
   .section {
-    background: #fff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     box-shadow: none !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 1.25rem !important;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 1.75rem !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
   .section-title {
-    font-size: 1rem !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
     color: #0f172a !important;
   }
   .table-wrap {
     overflow: visible !important;
-    margin-top: 0.5rem !important;
+    margin-top: 0.75rem !important;
     width: 100% !important;
   }
   table {
     table-layout: fixed !important;
     width: 100% !important;
-    font-size: 8pt !important;
+    font-size: 8.5pt !important;
     border-collapse: collapse !important;
   }
   th {
-    background: #f1f5f9 !important;
-    color: #334155 !important;
-    padding: 0.4rem 0.5rem !important;
-    border-bottom: 1.5px solid #cbd5e1 !important;
-    font-size: 7.5pt !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    padding: 0.5rem 0.65rem !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    font-size: 8pt !important;
+    letter-spacing: 0.05em !important;
   }
   td {
-    padding: 0.45rem 0.5rem !important;
+    padding: 0.55rem 0.65rem !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    color: #1e293b !important;
+    color: #0f172a !important;
+    font-weight: 500 !important;
     white-space: normal !important;
+  }
+  td code {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+    padding: 0.15rem 0.4rem !important;
+  }
+  .cell-num {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+  .tag-crit {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border: 1px solid #f87171 !important;
+    font-weight: 800 !important;
+    font-size: 7pt !important;
+    padding: 0.15rem 0.45rem !important;
+  }
+  .tag-warn {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fbbf24 !important;
+    font-weight: 800 !important;
+    font-size: 7pt !important;
+    padding: 0.15rem 0.45rem !important;
+  }
+  .tag-ok {
+    background: #d1fae5 !important;
+    color: #065f46 !important;
+    border: 1px solid #34d399 !important;
+    font-weight: 800 !important;
+    font-size: 7pt !important;
+    padding: 0.15rem 0.45rem !important;
   }
   .code-expand-row {
     display: none !important;
@@ -491,7 +544,7 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   .code-expand-cell {
     background: #f8fafc !important;
     border-color: #cbd5e1 !important;
-    padding: 0.5rem 0.75rem !important;
+    padding: 0.6rem 0.85rem !important;
   }
   .code-box {
     background: #f1f5f9 !important;
@@ -499,30 +552,32 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     border: 1px solid #cbd5e1 !important;
     max-height: none !important;
     font-size: 7.5pt !important;
-    line-height: 1.35 !important;
-    padding: 0.5rem !important;
+    line-height: 1.4 !important;
+    padding: 0.6rem !important;
     white-space: pre-wrap !important;
     word-break: break-word !important;
   }
   .code-box code {
     white-space: pre-wrap !important;
     word-break: break-word !important;
+    color: #0f172a !important;
   }
   .ln {
-    color: #64748b !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
   }
   .legend-card, .arch-item {
     background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    padding: 0.5rem 0.75rem !important;
+    border: 1.5px solid #e2e8f0 !important;
+    padding: 0.65rem 0.85rem !important;
   }
-  .legend-name, .legend-pct {
+  .legend-name {
+    color: #475569 !important;
+    font-weight: 700 !important;
+  }
+  .legend-pct {
     color: #0f172a !important;
-  }
-  .tag-crit, .tag-warn, .tag-ok {
-    border: 1px solid #cbd5e1 !important;
-    font-size: 6.5pt !important;
-    padding: 0.1rem 0.35rem !important;
+    font-weight: 800 !important;
   }
   footer {
     display: none !important;
@@ -649,6 +704,11 @@ impl HtmlCtx<'_> {
                 pill.cls,
                 pill.label,
                 star_string(st)
+            );
+        } else if !crate::coverage::has_llvm_cov() {
+            let _ = writeln!(
+                self.out,
+                "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Test Coverage</span><span class=\"card-pill pill-amber\">NOT INSTALLED</span></div><div class=\"card-val\">N/A</div><div class=\"stars\">☆☆☆☆☆☆☆</div><div class=\"card-sub\">Run 'cargo install cargo-llvm-cov'</div></div>"
             );
         } else {
             let _ = writeln!(
@@ -789,7 +849,7 @@ impl HtmlCtx<'_> {
         }
         let _ = writeln!(
             self.out,
-            "<div class=\"table-wrap\"><table><colgroup><col style=\"width:28%\"><col style=\"width:26%\"><col style=\"width:10%\"><col style=\"width:14%\"><col style=\"width:10%\"><col style=\"width:12%\"></colgroup><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center\">Action</th></tr></thead><tbody>",
+            "<div class=\"table-wrap\"><table><colgroup><col style=\"width:28%\"><col style=\"width:26%\"><col style=\"width:10%\"><col style=\"width:14%\"><col style=\"width:10%\"><col class=\"col-action\" style=\"width:12%\"></colgroup><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center col-action\">Action</th></tr></thead><tbody>",
             meta.val_header
         );
         for (i, row_data) in rows.iter().enumerate() {
@@ -926,7 +986,7 @@ fn render_table_row(
     let source = read_function_source(&m.file_path, m.start_line, m.lines_of_code);
     let _ = writeln!(
         out,
-        "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td class=\"cell-center\">L{}</td><td class=\"cell-center cell-num\">{val}</td><td class=\"cell-center\"><span class=\"{}\">{}</span></td><td class=\"cell-center\"><button class=\"expand-btn\" onclick=\"toggleCode(this, '{row_id}')\">🔍 View Code</button></td></tr>",
+        "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td class=\"cell-center\">L{}</td><td class=\"cell-center cell-num\">{val}</td><td class=\"cell-center\"><span class=\"{}\">{}</span></td><td class=\"cell-center col-action\"><button class=\"expand-btn\" onclick=\"toggleCode(this, '{row_id}')\">🔍 View Code</button></td></tr>",
         m.function_name, m.start_line, meta.tag_cls, meta.tag_label
     );
     let _ = writeln!(
