@@ -207,7 +207,13 @@ h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;
 .legend-pct { font-size: 1rem; font-weight: 800; color: #fff; }
 
 .table-wrap { width: 100%; overflow-x: auto; margin-top: 0.75rem; }
-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: left;
+  table-layout: fixed;
+}
 th {
   background: var(--surface-2);
   color: var(--text-secondary);
@@ -218,8 +224,17 @@ th {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 tr:hover td { background: var(--surface-2); }
 code {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
@@ -229,6 +244,11 @@ code {
   padding: 0.2rem 0.45rem;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  max-width: 100%;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 .th-center, .td-center, .cell-center { text-align: center !important; }
 .cell-num { font-family: "JetBrains Mono", monospace; font-weight: 700; color: #fff; }
@@ -260,11 +280,14 @@ code {
 .code-expand-row { display: none; }
 .code-expand-row.open { display: table-row; }
 .code-expand-cell {
-  padding: 0.85rem 1.25rem 1.25rem 1.25rem !important;
-  background: rgba(8, 12, 22, 0.95) !important;
+  padding: 0.85rem 1rem 1.25rem 1rem !important;
+  background: rgba(6, 10, 20, 0.98) !important;
+  white-space: normal !important;
+  max-width: 0;
+  width: 100%;
 }
 .code-box {
-  background: #040711;
+  background: #030610;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
@@ -273,7 +296,21 @@ code {
   font-size: 0.8rem;
   line-height: 1.5;
   color: #e2e8f0;
-  max-height: 350px;
+  max-height: 380px;
+  box-sizing: border-box;
+  max-width: 100%;
+  white-space: pre;
+  word-break: normal;
+}
+.code-box code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  color: inherit !important;
+  display: block;
+  min-width: max-content;
+  white-space: pre;
 }
 .ln {
   color: #64748b;
@@ -320,7 +357,7 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
   .tab-btn { padding: 0.5rem 0.85rem; font-size: 0.82rem; }
   .section { padding: 1rem; }
   .legend-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-  table { min-width: 580px; }
+  table { min-width: 620px; }
   .table-wrap {
     -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-sm);
@@ -336,31 +373,160 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
 }
 
 @media print {
-  @page { size: A4 portrait; margin: 1.2cm; }
-  body { background: #fff !important; color: #0f172a !important; padding: 0 !important; font-size: 10pt; }
-  .container { max-width: 100% !important; margin: 0 !important; }
-  header, .card, .section { background: #fff !important; border: 1px solid #cbd5e1 !important; box-shadow: none !important; color: #0f172a !important; }
-  .btn-action, .tabs, .expand-btn { display: none !important; }
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+  }
+  body {
+    background: #fff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+  .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 4mm !important;
+  }
+  header {
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 1rem 1.25rem !important;
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .btn-action, .tabs, .expand-btn {
+    display: none !important;
+  }
+  .gauge-box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0.5rem 1rem !important;
+  }
+  .gauge-svg {
+    width: 54px !important;
+    height: 54px !important;
+  }
+  .grid-cards {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1.25rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .card {
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 0.75rem 1rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .card-val {
+    font-size: 1.3rem !important;
+    color: #0f172a !important;
+  }
   .tab-pane {
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
-    page-break-before: always;
-    break-before: page;
+    page-break-before: auto !important;
+    break-before: auto !important;
   }
-  #tab-overview { page-break-before: avoid !important; break-before: auto !important; }
-  .code-expand-row { display: table-row !important; }
-  .code-expand-cell { background: #f8fafc !important; border-color: #cbd5e1 !important; }
-  .code-box { background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; max-height: none !important; }
-  .ln { color: #64748b !important; }
-  table { min-width: 100% !important; page-break-inside: auto; }
-  tr { page-break-inside: avoid; page-break-after: auto; }
-  h1, .card-val, .gauge-val, .section-title { color: #0f172a !important; }
-  code { background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
-  th { background: #f8fafc !important; color: #475569 !important; }
-  .legend-card, .arch-item { background: #f8fafc !important; border-color: #e2e8f0 !important; }
-  .legend-name, .legend-pct { color: #0f172a !important; }
-  footer { display: none !important; }
+  .section {
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 1rem 1.25rem !important;
+    margin-bottom: 1.25rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .section-title {
+    font-size: 1rem !important;
+    color: #0f172a !important;
+  }
+  .table-wrap {
+    overflow: visible !important;
+    margin-top: 0.5rem !important;
+    width: 100% !important;
+  }
+  table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    font-size: 8pt !important;
+    border-collapse: collapse !important;
+  }
+  th {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    padding: 0.4rem 0.5rem !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    font-size: 7.5pt !important;
+  }
+  td {
+    padding: 0.45rem 0.5rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    white-space: normal !important;
+  }
+  .code-expand-row {
+    display: none !important;
+  }
+  .code-expand-row.open {
+    display: table-row !important;
+  }
+  .code-expand-cell {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .code-box {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    max-height: none !important;
+    font-size: 7.5pt !important;
+    line-height: 1.35 !important;
+    padding: 0.5rem !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+  .code-box code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+  .ln {
+    color: #64748b !important;
+  }
+  .legend-card, .arch-item {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .legend-name, .legend-pct {
+    color: #0f172a !important;
+  }
+  .tag-crit, .tag-warn, .tag-ok {
+    border: 1px solid #cbd5e1 !important;
+    font-size: 6.5pt !important;
+    padding: 0.1rem 0.35rem !important;
+  }
+  footer {
+    display: none !important;
+  }
 }
 "#;
 
@@ -623,7 +789,7 @@ impl HtmlCtx<'_> {
         }
         let _ = writeln!(
             self.out,
-            "<div class=\"table-wrap\"><table><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center\">Action</th></tr></thead><tbody>",
+            "<div class=\"table-wrap\"><table><colgroup><col style=\"width:28%\"><col style=\"width:26%\"><col style=\"width:10%\"><col style=\"width:14%\"><col style=\"width:10%\"><col style=\"width:12%\"></colgroup><thead><tr><th>File</th><th>Function</th><th class=\"th-center\">Line</th><th class=\"th-center\">{}</th><th class=\"th-center\">Severity</th><th class=\"th-center\">Action</th></tr></thead><tbody>",
             meta.val_header
         );
         for (i, row_data) in rows.iter().enumerate() {
@@ -639,7 +805,7 @@ impl HtmlCtx<'_> {
             self.out.push_str("<p class=\"empty-msg\">No high-risk / high-churn hotspots detected. ✅</p></div></div>\n");
             return;
         }
-        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th class=\"th-center\">Rank</th><th>File</th><th class=\"th-center\">Risk Points</th><th class=\"th-center\">Git Churn</th><th class=\"th-center\">Coverage</th><th>Recommendation</th></tr></thead><tbody>\n");
+        self.out.push_str("<div class=\"table-wrap\"><table><colgroup><col style=\"width:8%\"><col style=\"width:32%\"><col style=\"width:14%\"><col style=\"width:14%\"><col style=\"width:12%\"><col style=\"width:20%\"></colgroup><thead><tr><th class=\"th-center\">Rank</th><th>File</th><th class=\"th-center\">Risk Points</th><th class=\"th-center\">Git Churn</th><th class=\"th-center\">Coverage</th><th>Recommendation</th></tr></thead><tbody>\n");
         self.render_hotspot_rows(&hs, &fr);
         self.out.push_str("</tbody></table></div></div></div>\n");
     }
@@ -668,7 +834,7 @@ impl HtmlCtx<'_> {
             );
             return;
         }
-        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th>File</th><th class=\"th-center\">Line Span</th><th class=\"th-center\">Duplicated Lines</th><th class=\"th-center\">Status</th></tr></thead><tbody>\n");
+        self.out.push_str("<div class=\"table-wrap\"><table><colgroup><col style=\"width:45%\"><col style=\"width:18%\"><col style=\"width:20%\"><col style=\"width:17%\"></colgroup><thead><tr><th>File</th><th class=\"th-center\">Line Span</th><th class=\"th-center\">Duplicated Lines</th><th class=\"th-center\">Status</th></tr></thead><tbody>\n");
         for b in &dup.blocks {
             let rel = format_rel_path(&b.file_path, self.root_dir);
             let lines = (b.end_line - b.start_line) + 1;
@@ -733,10 +899,15 @@ function showTab(tabId) {
   if (clicked) clicked.classList.add('active');
 }
 function toggleCode(btn, rowId) {
-  const row = document.getElementById(rowId);
-  if (!row) return;
-  const isOpen = row.classList.toggle('open');
-  btn.innerHTML = isOpen ? '▲ Hide Code' : '🔍 View Code';
+  const target = document.getElementById(rowId);
+  if (!target) return;
+  const isAlreadyOpen = target.classList.contains('open');
+  document.querySelectorAll('.code-expand-row.open').forEach(r => r.classList.remove('open'));
+  document.querySelectorAll('.expand-btn').forEach(b => { b.innerHTML = '🔍 View Code'; });
+  if (!isAlreadyOpen) {
+    target.classList.add('open');
+    btn.innerHTML = '▲ Hide Code';
+  }
 }
 </script>
 ");
