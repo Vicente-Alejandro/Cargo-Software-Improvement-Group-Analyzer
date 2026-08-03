@@ -37,7 +37,15 @@ pub fn load_or_generate_lcov(
 }
 
 fn generate_lcov(dir: &Path) -> bool {
-    if std::env::var_os("LLVM_PROFILE_FILE").is_some() || !has_llvm_cov() {
+    if std::env::var_os("LLVM_PROFILE_FILE").is_some() {
+        return false;
+    }
+    if !has_llvm_cov() {
+        use owo_colors::OwoColorize;
+        eprintln!(
+            "{} ⚠️ cargo-llvm-cov is not installed. Run 'cargo install cargo-llvm-cov' to enable auto-coverage.",
+            "[cargo-sig]".bold().yellow()
+        );
         return false;
     }
     let Ok(c) = std::process::Command::new("cargo")
@@ -52,7 +60,8 @@ fn generate_lcov(dir: &Path) -> bool {
     wait_for_lcov(c)
 }
 
-fn has_llvm_cov() -> bool {
+#[must_use]
+pub fn has_llvm_cov() -> bool {
     std::process::Command::new("cargo")
         .args(["llvm-cov", "--version"])
         .stdout(std::process::Stdio::null())

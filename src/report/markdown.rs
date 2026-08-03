@@ -75,9 +75,13 @@ impl MarkdownCtx<'_> {
                 st,
                 pct
             );
+        } else if !crate::coverage::has_llvm_cov() {
+            self.out.push_str(
+                "| Test Coverage | N/A | cargo-llvm-cov not installed (Run 'cargo install cargo-llvm-cov') |\n",
+            );
         } else {
             self.out
-                .push_str("| Test Coverage | N/A | No coverage data generated |\n");
+                .push_str("| Test Coverage | N/A | No coverage data generated (Run 'cargo sig -a') |\n");
         }
     }
 
