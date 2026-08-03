@@ -1,5 +1,15 @@
 # Changelog
  
+## [1.2.5] - 2026-08-03
+
+### Added
+- **Graceful `cargo-llvm-cov` Detection & Guidance**: Proactive detection of missing `cargo-llvm-cov` tool with explicit installation recommendations across CLI, Markdown, and HTML reports.
+
+### Fixed
+- **PDF Action Column Removal**: Hidden empty `Action` table column and interactive buttons in `@media print` export.
+- **High-Contrast Print Typography**: Replaced faint/gray code font styles in PDF print mode with crisp, high-contrast dark slate (`#0f172a`) styling.
+- **Top & Bottom Print Margins**: Expanded `@page` print margin buffers (`20mm 15mm`) and container padding to eliminate content clipping on all sheet edges.
+
 ## [1.2.4] - 2026-08-03
 
 ### Added
