@@ -42,31 +42,28 @@ impl SigArgs {
     }
 
     fn apply_report_flag(&mut self, arg: &str) -> bool {
-        match arg {
-            "-r" | "--report" => {
-                self.report = true;
-                true
-            }
-            "-w" | "--html" | "--web" => {
-                self.html = true;
-                true
-            }
-            "-p" | "--pdf" => {
-                self.pdf = true;
-                true
-            }
-            _ => false,
+        if matches!(arg, "-r" | "--report") {
+            self.report = true;
+            true
+        } else if matches!(arg, "-w" | "--html" | "--web") {
+            self.html = true;
+            true
+        } else if matches!(arg, "-p" | "--pdf") {
+            self.pdf = true;
+            true
+        } else {
+            false
         }
     }
 
     fn apply_core_flag(&mut self, arg: &str) -> bool {
-        match arg {
-            "-a" | "--auto-cov" => {
-                self.auto_cov = true;
-                true
-            }
-            "-h" | "--help" => Self::exit_with_help(),
-            _ => false,
+        if matches!(arg, "-a" | "--auto-cov") {
+            self.auto_cov = true;
+            true
+        } else if matches!(arg, "-h" | "--help") {
+            Self::exit_with_help();
+        } else {
+            false
         }
     }
 
