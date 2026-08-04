@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 
-`tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots — in one command, with a 1–7 star rating.
+`tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots · Markdown, HTML & PDF reports — in one command, with a 1–7 star rating.
 
 **Current version:** `1.2.5`
 
@@ -18,46 +18,48 @@
 
 ## Overview
 
-`cargo-sig` is a zero-configuration Cargo subcommand that rates the maintainability of a Rust codebase using the [Software Improvement Group (SIG)](https://www.softwareimprovementgroup.com/) model — the same system behind Better Code Hub — cross-referenced with a Churn × Coverage hotspot analysis inspired by Michael Feathers' *Working Effectively with Legacy Code*.
+`cargo-sig` is a zero-configuration Cargo subcommand that rates the maintainability of a Rust codebase using the [Software Improvement Group (SIG)](https://www.softwareimprovementgroup.com/) model — the standard behind ISO/IEC 25010 software quality benchmarks and Better Code Hub — cross-referenced with a Churn × Coverage hotspot analysis inspired by Michael Feathers' *Working Effectively with Legacy Code* and Adam Tornhill's *Your Code as a Crime Scene*.
 
-It solves a specific problem: giving any Rust project a **single, comparable maintainability score**, computed locally from its own AST and Git history — no uploading code to a SaaS dashboard, no dependency on a paid platform like CodeScene or SonarQube.
+It computes a **single, standardized maintainability score (1–7 stars)** directly on your local machine using your source AST and Git history — completely offline, with zero SaaS telemetry and no external cloud services.
 
 ```text
 $ cargo sig -a
 
 [cargo-sig] Cargo SIG - Running check...
-[cargo-sig] ⏳ Generating coverage data via cargo-llvm-cov... 100%
+[cargo-sig] Generating coverage data via cargo-llvm-cov... 100%
 
 Summary:
-Total Functions: 76
-Volume > 15 lines: 2
+Total Functions: 180
+Volume > 15 lines: 0
 Interface > 4 params: 0
-Complexity > 5 branches: 1
-Code Duplication: 1.3%
+Complexity > 5 branches: 0
+Code Duplication: 1.1%
 
 Component Balance:
-  All components are balanced. ✅
+  All components are balanced. [OK]
 
 Module Coupling:
-  40 external dependencies ignored. ℹ️
-  Fan-Out is healthy across all modules. ✅
-  No Circular Dependencies. ✅
+  64 external dependencies ignored.
+  Fan-Out is healthy across all modules. [OK]
+  No Circular Dependencies. [OK]
 
 Risk Profile:
-Moderate Risk: 7.3%
+Moderate Risk: 0.0%
 High Risk: 0.0%
 Very High Risk: 0.0%
 
 ─────────────────────────────────────
 Maintainability Rating:
   Code Health:   ★★★★★★★ (7 / 7)
-  Test Coverage: ★★★★★★★ (7 / 7) [96.4% weighted]
-  System Volume: ★★★★★★★ (7 / 7) [Total: 703 func LOC]
+  Test Coverage: ★★★★★★★ (7 / 7) [96.0% weighted]
+  System Volume: ★★★★★★★ (7 / 7) [Total: 1630 func LOC]
   ──────────────────────────────
   Final Score:   ★★★★★★★ (7 / 7)
+
+Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.
 ```
 
-*(Actual output running against its own v0.7.1 repository)*
+*(Actual output running against `cargo-sig`'s own repository)*
 
 ---
 
@@ -67,8 +69,17 @@ Maintainability Rating:
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-- [What Gets Measured](#what-gets-measured)
-- [CI Integration](#ci-integration)
+  - [Command-Line Flags](#command-line-flags)
+  - [Coverage Ingestion](#coverage-ingestion)
+- [Reporting Ecosystem](#reporting-ecosystem)
+  - [Terminal Summary](#terminal-summary)
+  - [Markdown Report](#markdown-report)
+  - [Interactive Offline HTML Dashboard](#interactive-offline-html-dashboard)
+  - [Executive PDF Audit Report](#executive-pdf-audit-report)
+  - [Machine-Readable JSON Export](#machine-readable-json-export)
+  - [Automatic Workspace `.gitignore` Safety](#automatic-workspace-gitignore-safety)
+- [What Gets Measured (SIG Quality Model)](#what-gets-measured-sig-quality-model)
+- [CI/CD Quality Gates](#cicd-quality-gates)
 - [Exit Codes](#exit-codes)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -78,49 +89,46 @@ Maintainability Rating:
 
 ## Why cargo-sig
 
-Static analysis for Rust today means either a fast linter (`clippy`) that checks style and correctness, or a paid SaaS platform that computes maintainability trends from your Git history. There is no local, native middle ground.
+Static analysis for Rust traditionally means either a fast compiler linter (`clippy`) focusing on style and idioms, or heavy enterprise SaaS tools requiring remote code uploads and recurring subscriptions. `cargo-sig` fills the gap with a native, local, high-precision analyzer:
 
-`cargo-sig` gives you:
-
-- **A published, non-arbitrary model.** Ratings are computed against SIG's [10 Guidelines for Maintainable Software](https://www.softwareimprovementgroup.com/) — the same guidelines behind Better Code Hub — not an invented scoring formula.
-- **Churn-aware prioritization.** Complexity alone doesn't tell you what to refactor first. Crossing it with how often a file actually changes (via Git history) surfaces the handful of files doing the most damage — the "hotspots" from Adam Tornhill's *Your Code as a Crime Scene*.
-- **Native AST parsing.** Built directly on [`tree-sitter`](https://tree-sitter.github.io/tree-sitter/) with the official Rust grammar — no external metrics service, no Node.js runtime. Protected against stack overflows with fuzz-proof AST recursion bounds.
-- **High-Performance Architecture.** Uses `rayon` to parallelize file ingestion and AST parsing across all available CPU cores, making it ultra-fast even on massive monorepos.
-- **Enterprise-Grade Quality.** The engine itself enforces rigorous code quality standards, compiling cleanly under `#![warn(clippy::pedantic)]` and strict SIG guidelines.
-- **CI-ready by design.** Fail a build the moment a project's rating drops below a threshold you set.
+- **Published, Industry-Standard Quality Model:** Ratings map directly to SIG's published guidelines and ISO/IEC 25010 maintainability criteria.
+- **Git Churn Prioritization:** Cross-references structural complexity with Git commit frequency, highlighting genuine architectural hotspots rather than harmless legacy code.
+- **Native `tree-sitter` AST Parsing:** Analyzes exact concrete syntax trees with recursion bounds and zero C/Node.js runtime overhead.
+- **Parallel AST Analysis:** Powered by `rayon` for instant multi-threaded analysis across large repositories.
+- **Rich Multi-Format Reporting:** Generates comprehensive Markdown, interactive dark-themed HTML dashboards, and print-ready PDF executive reports locally.
+- **Zero Configuration & Minimal Footprint:** Works instantly out-of-the-box in any Rust project with hand-rolled argument parsing and minimal dependencies.
 
 ---
 
 ## Requirements
 
-| Requirement | Minimum version |
-|---|---|
-| Rust toolchain | 1.85.0 (required by the 2024 edition) |
-| Cargo | ships with Rust |
-| Operating system | Linux · macOS · Windows |
-| Git | required for the Churn analysis module |
-
-**Core dependencies:** `tree-sitter` + `tree-sitter-rust` (AST) · `owo-colors` (terminal output) · `anyhow` (errors). *We aggressively hand-roll features like CLI parsing (`std::env::args`) to maintain an ultra-minimal dependency tree.*
+| Requirement | Minimum Version | Note |
+|---|---|---|
+| Rust Toolchain | 1.85.0+ | Compatible with Rust 2024 edition |
+| Cargo | Ships with Rust | Subcommand integration |
+| Git | 2.0+ | Required for Git Churn & Hotspot analysis |
+| `cargo-llvm-cov` *(optional)* | Latest | Required only when using `-a` / `--auto-cov` |
+| Chrome / Edge / Chromium *(optional)* | Any recent | Required only for automated PDF export (`-p` / `--pdf`) |
 
 ---
 
 ## Installation
 
-To install `cargo-sig` globally via crates.io:
+### From crates.io
 
 ```bash
 cargo install cargo-sig
 ```
 
-**From source:**
+### From Source
 
 ```bash
-cargo install --git https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer --tag v0.6.1
+git clone https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer.git
 cd Cargo-Software-Improvement-Group-Analyzer
 cargo install --path .
 ```
 
-After installation, run it as a Cargo subcommand in any project:
+After installation, invoke it inside any Rust project:
 
 ```bash
 cargo sig
@@ -130,65 +138,111 @@ cargo sig
 
 ## Usage
 
-From the root of any Rust project:
+### Command-Line Flags
+
+| Flag | Long Form | Description | Output Target |
+|---|---|---|---|
+| `-a` | `--auto-cov` | Automatically generate and ingest test coverage data via `cargo-llvm-cov` | stdout |
+| `-r` | `--report` | Generate full Markdown audit report | `tools/cargo-sig/SIG_REPORT.md` |
+| `-w` | `--html`, `--web` | Generate interactive, standalone offline HTML dashboard | `tools/cargo-sig/SIG_REPORT.html` |
+| `-p` | `--pdf` | Generate standalone executive PDF audit report via headless browser | `tools/cargo-sig/SIG_REPORT.pdf` |
+| | `--fail-below <1-7>` | Set minimum maintainability score threshold for CI/CD quality gates | Non-zero exit code |
+| | `--format json` | Export detailed machine-readable JSON structure | stdout |
+| `-h` | `--help` | Display command-line options and usage summary | stdout |
+| `-V` | `--version` | Display current `cargo-sig` version | stdout |
+
+Multiple reporting flags can be combined in a single execution:
 
 ```bash
-cargo sig
-```
-
-### Command-line Arguments
-
-| Flag | Description | Status |
-|---|---|---|
-| `-a`, `--auto-cov` | Enable automatic test coverage generation using `cargo-llvm-cov` | Completed |
-| `-r`, `--report` | Generate a full Markdown report (`tools/cargo-sig/SIG_REPORT.md`) | Completed |
-| `-w`, `--html`, `--web` | Generate a standalone, dark-themed offline HTML report (`tools/cargo-sig/SIG_REPORT.html`) | Completed |
-| `-p`, `--pdf` | Generate a standalone PDF report via headless browser (`tools/cargo-sig/SIG_REPORT.pdf`) | Completed |
-| `--fail-below <1-7>` | Exit non-zero if the rating drops below the threshold (for CI gates) | Completed |
-| `--format json` | Export detailed structured JSON report to standard output | Completed |
-| `-h`, `--help` | Print the CLI help overview | Completed |
-
-Example — using it as a CI quality gate:
-
-```bash
-cargo sig --fail-below 3
+cargo sig -a -r -w -p
 ```
 
 ### Coverage Ingestion
 
-`cargo-sig` can dynamically cross-reference your architectural hotspots with your test coverage. 
+Running `cargo sig -a` (or `--auto-cov`) invokes `cargo-llvm-cov` with an asymptotic terminal progress indicator, generating and parsing LCOV coverage metrics without requiring manual file handling.
 
-By running `cargo sig -a` (or `--auto-cov`), the tool will automatically invoke `cargo-llvm-cov` in the background, rendering an asymptotic progress bar until LCOV data is successfully generated. It then parses this data and maps it against Git Churn to calculate your **Test Coverage** and **Maintainability Rating**.
-
-If you run `cargo sig` without the `-a` flag, it runs an ultra-fast static check, ignoring coverage. If you try to run with `-a` but `cargo-llvm-cov` is not installed, it degrades gracefully and kindly advises: `N/A (Run 'cargo install cargo-llvm-cov' to enable)`.
+If `cargo-llvm-cov` is not installed on your system, `cargo-sig` degrades gracefully:
+```text
+Test Coverage: N/A (cargo-llvm-cov not installed - Run 'cargo install cargo-llvm-cov')
+```
 
 ---
 
-## What Gets Measured
+## Reporting Ecosystem
 
-| Guideline / Module | What it checks | Status |
+All generated reports are stored cleanly under `tools/cargo-sig/` to avoid polluting your workspace root.
+
+```text
+my-rust-project/
+├── tools/
+│   └── cargo-sig/
+│       ├── SIG_REPORT.md    <-- Full Markdown breakdown
+│       ├── SIG_REPORT.html  <-- Interactive visual dashboard
+│       └── SIG_REPORT.pdf   <-- Print-ready executive audit
+└── .gitignore               <-- Automatically protected
+```
+
+### Terminal Summary
+Provides an instant high-level overview featuring:
+- Function metric violation totals (Volume, Interface, Complexity, Duplication)
+- Component balance and module coupling health
+- Proportional risk profile distribution (Moderate, High, Very High)
+- 1–7 star rating breakdown (Code Health, Test Coverage, System Volume, Final Score)
+
+### Markdown Report
+Generates `tools/cargo-sig/SIG_REPORT.md` formatted with GitHub-flavored markdown tables, code blocks, and clear violation callouts for inclusion in pull requests or project documentation.
+
+### Interactive Offline HTML Dashboard
+Generates `tools/cargo-sig/SIG_REPORT.html` featuring:
+- **Executive Glassmorphic Theme:** Dark-palette UI with responsive typography (`Inter` + `JetBrains Mono`).
+- **Dynamic SVG Score Gauge:** Radial SVG score visualization with semantic status coloring.
+- **Interactive Tab Navigation:** Switch instantly between *Overview*, *Violations*, *Hotspots Matrix*, *Duplication Spans*, and *Architecture*.
+- **Inline Source Code Expander:** Click **View Code** to inspect exact source snippets with syntax-highlighted line numbers without leaving the browser.
+- **100% Offline & Standalone:** Zero external CDN dependencies, web fonts, or tracking scripts.
+
+### Executive PDF Audit Report
+Generates `tools/cargo-sig/SIG_REPORT.pdf` using local headless browser printing (Chrome, Chromium, Edge, or Brave):
+- **ISO/IEC 25010 Compliance Header:** Formal audit report styling.
+- **Optimized Print Pagination:** Automated `@media print` layout with dedicated section page breaks.
+- **Hidden Interactive Elements:** Suppresses interactive tabs, buttons, and action columns for a publication-ready physical or digital PDF document.
+
+### Machine-Readable JSON Export
+Export full analysis data via `--format json` for integration with custom dashboards, telemetry collectors, or bespoke CI tooling:
+
+```bash
+cargo sig --format json > sig-metrics.json
+```
+
+### Automatic Workspace `.gitignore` Safety
+When running report generation commands (`-r`, `-w`, `-p`), `cargo-sig` verifies whether `tools/cargo-sig/` is listed in your project's `.gitignore`. If missing, it offers an interactive prompt or automatically adds the entry, preventing generated artifacts from polluting your Git repository.
+
+---
+
+## What Gets Measured (SIG Quality Model)
+
+| Dimension / Guideline | Target Standard | Metric & Diagnostic |
 |---|---|---|
-| SIG Guideline 1 — Short Units | Flags units longer than 15 lines of code | Completed |
-| SIG Guideline 2 — Simple Units | Cyclomatic complexity (branch points ≤ 4 per unit) | Completed |
-| SIG Guideline 3 — Write Code Once | Duplication percentage | Completed |
-| SIG Guideline 4 — Small Interfaces | Flags signatures with more than 4 parameters | Completed |
-| SIG Guideline 9 — Balance Components | Checks if any module dominates >50% of the codebase | Completed |
-| Churn × Coverage | Cross-references `git log` and `coverage.lcov` with bad quality files | Completed |
-| Scoring Engine | Normalizes all of the above into a 1–7 star rating | Completed |
-
-See [ROADMAP.md](./ROADMAP.md) for the full technical breakdown of each phase, the crates each module depends on, and open architectural risks.
+| **SIG 1: Short Units of Code** | LOC ≤ 15 lines | Flags long functions that should be decomposed into smaller units. |
+| **SIG 2: Simple Units of Code** | CC ≤ 5 branch points | Evaluates cyclomatic complexity (`if`, `match`, `while`, `for`, `?`). |
+| **SIG 3: Write Code Once** | Duplication ≤ 3.0% | AST block hashing to detect copied and pasted code fragments. |
+| **SIG 4: Keep Interfaces Small** | Params ≤ 4 | Flags functions with excessive parameter counts. |
+| **SIG 5 & 6: Module Coupling** | Fan-Out ≤ 7, No Cycles | Inspects `use` dependencies and identifies circular dependency chains. |
+| **SIG 7: Balance Components** | ≤ 50% LOC per module | Verifies that no single top-level directory dominates the codebase. |
+| **SIG 8: System Volume** | Scaled LOC limits | Grades total functional lines of code against maintainability volume scales. |
+| **SIG 9: Automated Test Coverage** | Weighted Coverage % | Computes churn-weighted test coverage percentage across the codebase. |
+| **Churn × Coverage Hotspots** | Risk Points × Commits | Surfaces high-complexity, frequently changed files with low test coverage. |
 
 ---
 
-## CI Integration
+## CI/CD Quality Gates
 
-`cargo-sig` exits with a non-zero code when a project's rating falls below the configured threshold, making it compatible with any CI system that checks exit codes.
+Use `--fail-below <1-7>` to enforce minimum maintainability scores in CI pipelines.
 
-### GitHub Actions
+### GitHub Actions Workflow
 
 ```yaml
-# .github/workflows/sig.yml
-name: Maintainability Gate
+# .github/workflows/maintainability.yml
+name: Maintainability Quality Gate
 
 on:
   push:
@@ -197,14 +251,15 @@ on:
     branches: [main]
 
 jobs:
-  cargo-sig:
-    name: cargo-sig
+  sig-gate:
+    name: SIG Maintainability Gate
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history — required by the Churn module
+          fetch-depth: 0 # Full history required for Git Churn analysis
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -212,36 +267,34 @@ jobs:
       - name: Install cargo-sig
         run: cargo install cargo-sig
 
-      - name: Run maintainability gate
-        run: cargo sig --fail-below 3
+      - name: Run Maintainability Gate
+        run: cargo sig --fail-below 4 -r -w
 ```
-
-> **Note:** the Churn module needs full Git history, not a shallow clone — set `fetch-depth: 0` in `actions/checkout`.
 
 ---
 
 ## Exit Codes
 
-| Code | Meaning |
-|---|---|
-| `0` | Rating met or exceeded the configured threshold |
-| `1` | Rating fell below the threshold, or a check failed |
-| `2` | Internal error — could not parse the project or read its Git history |
+| Code | Status | Meaning |
+|---|---|---|
+| `0` | **Success** | Analysis completed successfully and maintainability rating met the threshold. |
+| `1` | **Quality Failure** | Rating fell below `--fail-below` threshold, or analysis check failed. |
+| `2` | **System Error** | I/O error, invalid arguments, or failure reading workspace / Git history. |
 
 ---
 
 ## Roadmap
 
-This is an active, phased build. See [ROADMAP.md](./ROADMAP.md) for the full plan — theoretical foundations, verified dependency choices, an architecture diagram, and phase-by-phase milestones from the current AST engine through the complete 1–7 star scoring model.
+See [ROADMAP.md](./ROADMAP.md) for the complete version history and upcoming milestones, including historical tracking (`.sig_history.md`) and delta trend sparklines in **v1.3.0**.
 
 ---
 
 ## Contributing
 
-This project is currently developed as part of a personal engineering portfolio. Issues and discussion are welcome; contribution guidelines will be published once the core analysis engine (Phases 0–2 of the roadmap) is stable.
+Contributions, feedback, and issue reports are welcome! Please check the [issue tracker](https://github.com/Vicente-Alejandro/Cargo-Software-Improvement-Group-Analyzer/issues) or open a discussion on architecture enhancements.
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](./LICENSE) for details.
+This project is licensed under the [MIT License](./LICENSE).
