@@ -74,20 +74,20 @@ pub fn is_balanced(metrics: &[FunctionMetric]) -> bool {
 #[rustfmt::skip]
 fn print_balance(metrics: &[FunctionMetric]) {
     println!("\n{}", "Component Balance:".bold());
-    if is_balanced(metrics) { println!("  All components are balanced. ✅"); }
-    else { println!("  One component exceeds 50% of the codebase. ⚠️"); }
+    if is_balanced(metrics) { println!("  All components are balanced. {}", "[OK]".green()); }
+    else { println!("  One component exceeds 50% of the codebase. {}", "[WARN]".yellow()); }
 }
 
 #[rustfmt::skip]
 fn print_coupling(res: &AnalysisResult) {
     println!("\n{}", "Module Coupling:".bold());
-    if res.graph.ignored_externals > 0 { println!("  {} external dependencies ignored. {}", res.graph.ignored_externals, "ℹ️".blue()); }
+    if res.graph.ignored_externals > 0 { println!("  {} external dependencies ignored.", res.graph.ignored_externals); }
     let h_fan = res.metrics.iter().filter(|m| res.graph.fan_out(&m.file_path) > 5).count();
-    if h_fan > 0 { println!("  Fan-Out > 5: {} modules {}", h_fan, "⚠️".yellow()); }
-    else { println!("  Fan-Out is healthy across all modules. {}", "✅".green()); }
+    if h_fan > 0 { println!("  Fan-Out > 5: {} modules {}", h_fan, "[WARN]".yellow()); }
+    else { println!("  Fan-Out is healthy across all modules. {}", "[OK]".green()); }
     let cycles = res.graph.detect_cycles();
-    if cycles.is_empty() { println!("  No Circular Dependencies. {}", "✅".green()); } else {
-        println!("  Circular Dependencies: {} DETECTED! {}", cycles.len(), "🚨".red());
+    if cycles.is_empty() { println!("  No Circular Dependencies. {}", "[OK]".green()); } else {
+        println!("  Circular Dependencies: {} DETECTED! {}", cycles.len(), "[CRITICAL]".red());
         let path: Vec<_> = cycles[0].iter().map(|p| p.file_name().unwrap_or_default().to_string_lossy()).collect();
         println!("     Example: {} -> {}", path.join(" -> "), path[0]);
     }
@@ -111,7 +111,7 @@ pub fn print_hotspots(res: &AnalysisResult) {
     s.sort_by_key(|k| -( (fr.get(*k).unwrap_or(&0) * res.churns.get(*k).unwrap_or(&0)) as isize ));
     s.retain(|k| *fr.get(*k).unwrap_or(&0) > 0 && *res.churns.get(*k).unwrap_or(&0) > 0);
     if s.is_empty() { return; }
-    println!("\n{} {}", "Hotspots (Risk + Churn):".bold().yellow(), "⚠️".yellow());
+    println!("\n{}", "Hotspots (Risk + Churn):".bold().yellow());
     for (i, p) in s.iter().take(5).enumerate() {
         print_hotspot_item(i, p, &fr, res);
     }
@@ -140,7 +140,7 @@ fn print_profile(s: &Score) {
     }
     println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
     println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
-    println!("\n{}", "💡 Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.".dimmed());
+    println!("\n{}", "Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.".dimmed());
 }
 
 pub fn star_string(stars: u8) -> String {

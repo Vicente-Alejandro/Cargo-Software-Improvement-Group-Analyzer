@@ -927,7 +927,7 @@ impl HtmlCtx<'_> {
         let (hs, _) = get_sorted_hotspots(self.res);
         let _ = writeln!(
             self.out,
-            "<div class=\"tabs\"><button class=\"tab-btn active\" onclick=\"showTab('tab-overview')\">📊 Overview</button><button class=\"tab-btn\" onclick=\"showTab('tab-violations')\">⚠️ Violations <span class=\"tab-badge\">{total_v}</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-hotspots')\">⚡ Hotspots <span class=\"tab-badge\">{}</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-duplication')\">👥 Duplication <span class=\"tab-badge\">{:.1}%</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-architecture')\">🏗️ Architecture</button></div>",
+            "<div class=\"tabs\"><button class=\"tab-btn active\" onclick=\"showTab('tab-overview')\">Overview</button><button class=\"tab-btn\" onclick=\"showTab('tab-violations')\">Violations <span class=\"tab-badge\">{total_v}</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-hotspots')\">Hotspots <span class=\"tab-badge\">{}</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-duplication')\">Duplication <span class=\"tab-badge\">{:.1}%</span></button><button class=\"tab-btn\" onclick=\"showTab('tab-architecture')\">Architecture</button></div>",
             hs.len(),
             self.res.dup_res.percentage
         );
@@ -943,7 +943,7 @@ impl HtmlCtx<'_> {
     fn render_risk_section(&mut self) {
         let s = self.res.score;
         let low_pct = (100.0 - s.pct_moderate - s.pct_high - s.pct_very_high).max(0.0);
-        self.out.push_str("<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">🎯 Risk Profile Distribution</h2></div>\n");
+        self.out.push_str("<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">Risk Profile Distribution</h2></div>\n");
         let _ = writeln!(
             self.out,
             "<div class=\"risk-bar\"><div class=\"risk-seg risk-low\" style=\"width:{low_pct}%\"></div><div class=\"risk-seg risk-mod\" style=\"width:{}%\"></div><div class=\"risk-seg risk-high\" style=\"width:{}%\"></div><div class=\"risk-seg risk-vhigh\" style=\"width:{}%\"></div></div>",
@@ -989,8 +989,8 @@ impl HtmlCtx<'_> {
     fn render_volume_table(&mut self) {
         let meta = TableMeta {
             prefix: "vol",
-            title: "📏 1. Unit Size Violations (> 15 LOC)",
-            empty_msg: "No unit size violations detected. ✅",
+            title: "1. Unit Size Violations (> 15 LOC)",
+            empty_msg: "No unit size violations detected.",
             val_header: "Lines of Code",
             tag_label: "CRITICAL",
             tag_cls: "tag-crit",
@@ -1001,8 +1001,8 @@ impl HtmlCtx<'_> {
     fn render_complexity_table(&mut self) {
         let meta = TableMeta {
             prefix: "comp",
-            title: "🔀 2. Unit Complexity Violations (> 5 Branches)",
-            empty_msg: "No unit complexity violations detected. ✅",
+            title: "2. Unit Complexity Violations (> 5 Branches)",
+            empty_msg: "No unit complexity violations detected.",
             val_header: "Complexity",
             tag_label: "WARNING",
             tag_cls: "tag-warn",
@@ -1013,8 +1013,8 @@ impl HtmlCtx<'_> {
     fn render_interface_table(&mut self) {
         let meta = TableMeta {
             prefix: "int",
-            title: "🔌 3. Unit Interface Violations (> 4 Parameters)",
-            empty_msg: "No interface parameter violations detected. ✅",
+            title: "3. Unit Interface Violations (> 4 Parameters)",
+            empty_msg: "No interface parameter violations detected.",
             val_header: "Parameters",
             tag_label: "INFO",
             tag_cls: "tag-ok",
@@ -1049,9 +1049,9 @@ impl HtmlCtx<'_> {
 
     fn render_tab_hotspots(&mut self) {
         let (hs, fr) = get_sorted_hotspots(self.res);
-        self.out.push_str("<div id=\"tab-hotspots\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">⚡ Hotspots (Risk × Churn Matrix)</h2></div>\n");
+        self.out.push_str("<div id=\"tab-hotspots\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">Hotspots (Risk × Churn Matrix)</h2></div>\n");
         if hs.is_empty() {
-            self.out.push_str("<p class=\"empty-msg\">No high-risk / high-churn hotspots detected. ✅</p></div></div>\n");
+            self.out.push_str("<p class=\"empty-msg\">No high-risk / high-churn hotspots detected.</p></div></div>\n");
             return;
         }
         self.out.push_str("<div class=\"table-wrap\"><table><colgroup><col style=\"width:8%\"><col style=\"width:32%\"><col style=\"width:14%\"><col style=\"width:14%\"><col style=\"width:12%\"><col style=\"width:20%\"></colgroup><thead><tr><th class=\"th-center\">Rank</th><th>File</th><th class=\"th-center\">Risk Points</th><th class=\"th-center\">Git Churn</th><th class=\"th-center\">Coverage</th><th>Recommendation</th></tr></thead><tbody>\n");
@@ -1074,12 +1074,12 @@ impl HtmlCtx<'_> {
         self.out.push_str("<div id=\"tab-duplication\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\">");
         let _ = writeln!(
             self.out,
-            "<h2 class=\"section-title\">👥 Code Duplication Spans ({:.1}% Total)</h2></div>",
+            "<h2 class=\"section-title\">Code Duplication Spans ({:.1}% Total)</h2></div>",
             dup.percentage
         );
         if dup.blocks.is_empty() {
             self.out.push_str(
-                "<p class=\"empty-msg\">No duplicated code blocks detected. ✅</p></div></div>\n",
+                "<p class=\"empty-msg\">No duplicated code blocks detected.</p></div></div>\n",
             );
             return;
         }
@@ -1097,11 +1097,11 @@ impl HtmlCtx<'_> {
     }
 
     fn render_tab_architecture(&mut self) {
-        self.out.push_str("<div id=\"tab-architecture\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">🏗️ Architecture & Component Balance</h2></div><div class=\"arch-card\">\n");
+        self.out.push_str("<div id=\"tab-architecture\" class=\"tab-pane print-page-break\">\n<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">Architecture & Component Balance</h2></div><div class=\"arch-card\">\n");
         if super::is_balanced(self.res.metrics) {
-            self.out.push_str("<div class=\"arch-item\"><span>Component Balance</span><span class=\"tag-ok\">BALANCED (&lt; 50% Share Each) ✅</span></div>\n");
+            self.out.push_str("<div class=\"arch-item\"><span>Component Balance</span><span class=\"tag-ok\">BALANCED (&lt; 50% Share Each)</span></div>\n");
         } else {
-            self.out.push_str("<div class=\"arch-item\"><span>Component Balance</span><span class=\"tag-warn\">UNBALANCED (&gt; 50% Single Component) ⚠️</span></div>\n");
+            self.out.push_str("<div class=\"arch-item\"><span>Component Balance</span><span class=\"tag-warn\">UNBALANCED (&gt; 50% Single Component)</span></div>\n");
         }
         self.render_cycles();
         self.out.push_str("</div></div></div>\n");
@@ -1110,12 +1110,12 @@ impl HtmlCtx<'_> {
     fn render_cycles(&mut self) {
         let cycles = self.res.graph.detect_cycles();
         if cycles.is_empty() {
-            self.out.push_str("<div class=\"arch-item\"><span>Circular Dependencies</span><span class=\"tag-ok\">NONE DETECTED ✅</span></div>\n");
+            self.out.push_str("<div class=\"arch-item\"><span>Circular Dependencies</span><span class=\"tag-ok\">NONE DETECTED</span></div>\n");
             return;
         }
         let _ = writeln!(
             self.out,
-            "<div class=\"arch-item\"><span>Circular Dependencies</span><span class=\"tag-crit\">{} DETECTED 🚨</span></div><ul class=\"cycle-list\">",
+            "<div class=\"arch-item\"><span>Circular Dependencies</span><span class=\"tag-crit\">{} DETECTED</span></div><ul class=\"cycle-list\">",
             cycles.len()
         );
         for (i, c) in cycles.iter().take(5).enumerate() {
@@ -1152,10 +1152,10 @@ function toggleCode(btn, rowId) {
   if (!target) return;
   const isAlreadyOpen = target.classList.contains('open');
   document.querySelectorAll('.code-expand-row.open').forEach(r => r.classList.remove('open'));
-  document.querySelectorAll('.expand-btn').forEach(b => { b.innerHTML = '🔍 View Code'; });
+  document.querySelectorAll('.expand-btn').forEach(b => { b.textContent = 'View Code'; });
   if (!isAlreadyOpen) {
     target.classList.add('open');
-    btn.innerHTML = '▲ Hide Code';
+    btn.textContent = 'Hide Code';
   }
 }
 </script>
@@ -1175,7 +1175,7 @@ fn render_table_row(
     let source = read_function_source(&m.file_path, m.start_line, m.lines_of_code);
     let _ = writeln!(
         out,
-        "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td class=\"cell-center\">L{}</td><td class=\"cell-center cell-num\">{val}</td><td class=\"cell-center\"><span class=\"{}\">{}</span></td><td class=\"cell-center col-action\"><button class=\"expand-btn\" onclick=\"toggleCode(this, '{row_id}')\">🔍 View Code</button></td></tr>",
+        "<tr><td><code>{rel}</code></td><td><code>{}</code></td><td class=\"cell-center\">L{}</td><td class=\"cell-center cell-num\">{val}</td><td class=\"cell-center\"><span class=\"{}\">{}</span></td><td class=\"cell-center col-action\"><button class=\"expand-btn\" onclick=\"toggleCode(this, '{row_id}')\">View Code</button></td></tr>",
         m.function_name, m.start_line, meta.tag_cls, meta.tag_label
     );
     let _ = writeln!(
