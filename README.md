@@ -10,7 +10,7 @@
 
 `tree-sitter` AST analysis · SIG 10-guideline checks · Churn × Coverage hotspots · Markdown, HTML & PDF reports — in one command, with a 1–7 star rating.
 
-**Current version:** `1.2.5`
+**Current version:** `1.3.0`
 
 </div>
 
@@ -176,27 +176,33 @@ All generated reports are stored cleanly under `tools/cargo-sig/` to avoid pollu
 my-rust-project/
 ├── tools/
 │   └── cargo-sig/
+│       ├── .sig_history.md  <-- Longitudinal history tracking log
 │       ├── SIG_REPORT.md    <-- Full Markdown breakdown
 │       ├── SIG_REPORT.html  <-- Interactive visual dashboard
 │       └── SIG_REPORT.pdf   <-- Print-ready executive audit
 └── .gitignore               <-- Automatically protected
 ```
 
-### Terminal Summary
-Provides an instant high-level overview featuring:
+### Terminal Summary & Delta Indicators
+Provides an instant high-level overview with comparative delta indicators against the previous audit run:
 - Function metric violation totals (Volume, Interface, Complexity, Duplication)
 - Component balance and module coupling health
 - Proportional risk profile distribution (Moderate, High, Very High)
-- 1–7 star rating breakdown (Code Health, Test Coverage, System Volume, Final Score)
+- 1–7 star rating breakdown (Code Health, Test Coverage, System Volume, Final Score) with delta markers (e.g. `(=)`, `(+1)`, `(-2)`)
+
+### Longitudinal Maintainability Tracking (`.sig_history.md`)
+Automatically logs every audit execution in `tools/cargo-sig/.sig_history.md`:
+- **Continuous Quality Tracking:** Logs timestamp, short Git commit hash, 1–7 ratings, coverage %, functional LOC, total violations, and duplication %.
+- **Automatic Evolution Trajectory:** Powers historical trajectory tables in Markdown, HTML dashboards, and PDF reports without external telemetry databases.
 
 ### Markdown Report
-Generates `tools/cargo-sig/SIG_REPORT.md` formatted with GitHub-flavored markdown tables, code blocks, and clear violation callouts for inclusion in pull requests or project documentation.
+Generates `tools/cargo-sig/SIG_REPORT.md` formatted with GitHub-flavored markdown tables, code blocks, delta indicators, and a Historical Maintainability Trajectory table for inclusion in pull requests or project documentation.
 
 ### Interactive Offline HTML Dashboard
 Generates `tools/cargo-sig/SIG_REPORT.html` featuring:
 - **Executive Glassmorphic Theme:** Dark-palette UI with responsive typography (`Inter` + `JetBrains Mono`).
-- **Dynamic SVG Score Gauge:** Radial SVG score visualization with semantic status coloring.
-- **Interactive Tab Navigation:** Switch instantly between *Overview*, *Violations*, *Hotspots Matrix*, *Duplication Spans*, and *Architecture*.
+- **Dynamic SVG Score Gauge & Delta Badges:** Radial SVG score visualization and real-time metric delta badges on scorecards.
+- **Interactive Tab Navigation:** Switch instantly between *Overview* (with Historical Trajectory table), *Violations*, *Hotspots Matrix*, *Duplication Spans*, and *Architecture*.
 - **Inline Source Code Expander:** Click **View Code** to inspect exact source snippets with syntax-highlighted line numbers without leaving the browser.
 - **100% Offline & Standalone:** Zero external CDN dependencies, web fonts, or tracking scripts.
 

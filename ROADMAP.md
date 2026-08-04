@@ -160,10 +160,13 @@ This release is deliberately scoped to correctness only — no new features — 
 - [x] **Graceful `cargo-llvm-cov` Fallback:** Proactive detection of missing coverage tool with friendly installation guides.
 
 ## v1.3.0 — Historical Maintainability Tracking (`.sig_history.md`)
-**Status:** Planned
+**Status:** Completed
 
-- [x] **Longitudinal Analysis:** Track score progression, LOC growth, and complexity trajectory across Git revisions.
-- [ ] **Delta Badges & Sparklines:** Display delta indicators (`+`, `-`, `=`) compared against the previous audit run.
+- [x] **Longitudinal Tracking File (`tools/cargo-sig/.sig_history.md`):** Automatically record timestamped audit runs (commit hash, 1–7 rating, code health, coverage %, functional LOC, total violations, duplication %).
+- [x] **Delta Calculation Engine:** Parse previous audit entry to compute precise deltas across stars, LOC, violations, coverage, and duplication.
+- [x] **CLI Delta Annotations:** Display concise delta markers (`(=)`, `(+1)`, `(-2)`) directly in the terminal summary.
+- [x] **Markdown Evolution Section:** Embed historical tracking table and delta status in `SIG_REPORT.md`.
+- [x] **HTML & PDF Dashboard History Tab & Badges:** Render trend trajectory table in Overview pane and badge delta indicators on metric scorecards.
 
 ---
 
