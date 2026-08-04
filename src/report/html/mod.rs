@@ -101,30 +101,20 @@ impl HtmlCtx<'_> {
         self.out.push_str("</div>\n");
     }
 
+    #[rustfmt::skip]
     fn render_card_final(&mut self) {
         let s = self.res.score;
-        let pill = get_star_pill(s.stars);
-        let _ = writeln!(
-            self.out,
-            "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Final Rating</span><span class=\"card-pill {}\">{}</span></div><div class=\"card-val\">{}/7 Stars</div><div class=\"stars\">{}</div><div class=\"card-sub\">Aggregate Maintainability</div></div>",
-            pill.cls,
-            pill.label,
-            s.stars,
-            star_string(s.stars)
-        );
+        let d_html = self.res.delta.map_or(String::new(), |d| { let (t, c) = get_delta_badge_stars(d.delta_stars); format!("<span class=\"badge-delta {c}\">{t}</span>") });
+        let c = CardData { title: "Final Rating", val: format!("{}/7 Stars", s.stars), stars: s.stars, sub: "Aggregate Maintainability".into(), delta: d_html };
+        render_metric_card(self.out, &c);
     }
 
+    #[rustfmt::skip]
     fn render_card_health(&mut self) {
         let s = self.res.score;
-        let pill = get_star_pill(s.code_stars);
-        let _ = writeln!(
-            self.out,
-            "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Code Health</span><span class=\"card-pill {}\">{}</span></div><div class=\"card-val\">{}/7 Stars</div><div class=\"stars\">{}</div><div class=\"card-sub\">Volume & Complexity</div></div>",
-            pill.cls,
-            pill.label,
-            s.code_stars,
-            star_string(s.code_stars)
-        );
+        let d_html = self.res.delta.map_or(String::new(), |d| { let (t, c) = get_delta_badge_stars(d.delta_code_stars); format!("<span class=\"badge-delta {c}\">{t}</span>") });
+        let c = CardData { title: "Code Health", val: format!("{}/7 Stars", s.code_stars), stars: s.code_stars, sub: "Volume & Complexity".into(), delta: d_html };
+        render_metric_card(self.out, &c);
     }
 
     #[rustfmt::skip]
@@ -132,25 +122,23 @@ impl HtmlCtx<'_> {
         let s = self.res.score;
         if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
             let pill = get_star_pill(st);
-            let _ = writeln!(self.out, "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Test Coverage</span><span class=\"card-pill {}\">{}</span></div><div class=\"card-val\">{pct:.1}%</div><div class=\"stars\">{}</div><div class=\"card-sub\">{st}/7 Stars Weighted</div></div>", pill.cls, pill.label, star_string(st));
+            let delta_html = self.res.delta.and_then(|d| d.delta_cov).map_or(String::new(), |c| {
+                let (txt, cls) = get_delta_badge_cov(c);
+                format!("<span class=\"badge-delta {cls}\">{txt}</span>")
+            });
+            let _ = writeln!(self.out, "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Test Coverage</span><div class=\"card-badges\">{delta_html}<span class=\"card-pill {}\">{}</span></div></div><div class=\"card-val\">{pct:.1}%</div><div class=\"stars\">{}</div><div class=\"card-sub\">{st}/7 Stars Weighted</div></div>", pill.cls, pill.label, star_string(st));
         } else {
             let (label, hint) = if crate::coverage::has_llvm_cov() { ("UNAVAILABLE", "Run 'cargo sig -a'") } else { ("NOT INSTALLED", "Run 'cargo install cargo-llvm-cov'") };
             let _ = writeln!(self.out, "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">Test Coverage</span><span class=\"card-pill pill-amber\">{label}</span></div><div class=\"card-val\">N/A</div><div class=\"stars\">☆☆☆☆☆☆☆</div><div class=\"card-sub\">{hint}</div></div>");
         }
     }
 
+    #[rustfmt::skip]
     fn render_card_volume(&mut self) {
         let s = self.res.score;
-        let pill = get_star_pill(s.volume_stars);
-        let _ = writeln!(
-            self.out,
-            "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">System Volume</span><span class=\"card-pill {}\">{}</span></div><div class=\"card-val\">{} LOC</div><div class=\"stars\">{}</div><div class=\"card-sub\">{}/7 Stars Scale</div></div>",
-            pill.cls,
-            pill.label,
-            s.total_loc,
-            star_string(s.volume_stars),
-            s.volume_stars
-        );
+        let d_html = self.res.delta.map_or(String::new(), |d| { let (t, c) = get_delta_badge_loc(d.delta_loc); format!("<span class=\"badge-delta {c}\">{t}</span>") });
+        let c = CardData { title: "System Volume", val: format!("{} LOC", s.total_loc), stars: s.volume_stars, sub: format!("{}/7 Stars Scale", s.volume_stars), delta: d_html };
+        render_metric_card(self.out, &c);
     }
 
     fn render_tabs(&mut self) {
@@ -169,7 +157,24 @@ impl HtmlCtx<'_> {
         self.out
             .push_str("<div id=\"tab-overview\" class=\"tab-pane active\">\n");
         self.render_risk_section();
+        self.render_history_section();
         self.out.push_str("</div>\n");
+    }
+
+    fn render_history_section(&mut self) {
+        if self.res.history.is_empty() { return; }
+        self.out.push_str("<div class=\"section\"><div class=\"section-header\"><h2 class=\"section-title\">Historical Maintainability Trajectory</h2><span class=\"badge\">tools/cargo-sig/.sig_history.md</span></div>\n");
+        self.out.push_str("<div class=\"table-wrap\"><table><thead><tr><th>Date</th><th>Commit</th><th>Score</th><th>Code Health</th><th>Coverage</th><th>System Volume</th><th>Violations</th><th>Duplication</th></tr></thead><tbody>\n");
+        for rec in self.res.history.iter().rev().take(10) {
+            let cov = rec.cov_pct.map_or_else(|| "N/A".to_string(), |p| format!("{p:.1}%"));
+            let pill = get_star_pill(rec.stars);
+            let _ = writeln!(
+                self.out,
+                "<tr><td>{}</td><td><code>{}</code></td><td><span class=\"card-pill {}\">{}/7 Stars</span></td><td>{}/7</td><td>{}</td><td>{} LOC</td><td>{}</td><td>{:.1}%</td></tr>",
+                rec.date, rec.commit, pill.cls, rec.stars, rec.code_stars, cov, rec.total_loc, rec.total_violations, rec.dup_pct
+            );
+        }
+        self.out.push_str("</tbody></table></div></div>\n");
     }
 
     fn render_risk_section(&mut self) {
@@ -406,6 +411,49 @@ fn get_star_pill(stars: u8) -> StarPill {
     StarPill { cls, label }
 }
 
+fn get_delta_badge_stars(delta: i8) -> (String, &'static str) {
+    match delta {
+        0 => ("=".to_string(), "delta-same"),
+        d if d > 0 => (format!("+{d}"), "delta-pos"),
+        d => (format!("{d}"), "delta-neg"),
+    }
+}
+
+fn get_delta_badge_loc(delta: isize) -> (String, &'static str) {
+    match delta {
+        0 => ("=".to_string(), "delta-same"),
+        d if d > 0 => (format!("+{d}"), "delta-same"),
+        d => (format!("{d}"), "delta-pos"),
+    }
+}
+
+fn get_delta_badge_cov(delta: f32) -> (String, &'static str) {
+    if delta.abs() < 0.05 {
+        ("=".to_string(), "delta-same")
+    } else if delta > 0.0 {
+        (format!("+{delta:.1}%"), "delta-pos")
+    } else {
+        (format!("{delta:.1}%"), "delta-neg")
+    }
+}
+
+struct CardData<'a> {
+    title: &'a str,
+    val: String,
+    stars: u8,
+    sub: String,
+    delta: String,
+}
+
+fn render_metric_card(out: &mut String, c: &CardData) {
+    let pill = get_star_pill(c.stars);
+    let _ = writeln!(
+        out,
+        "<div class=\"card\"><div class=\"card-header\"><span class=\"card-title\">{}</span><div class=\"card-badges\">{}<span class=\"card-pill {}\">{}</span></div></div><div class=\"card-val\">{}</div><div class=\"stars\">{}</div><div class=\"card-sub\">{}</div></div>",
+        c.title, c.delta, pill.cls, pill.label, c.val, star_string(c.stars), c.sub
+    );
+}
+
 struct TableMeta<'a> {
     prefix: &'a str,
     title: &'a str,
@@ -445,6 +493,8 @@ mod tests {
             score: &score,
             dup_res: &dup_res,
             graph: &graph,
+            delta: None,
+            history: &[],
         };
 
         let html = render_html(&res, dir.path());
@@ -516,6 +566,8 @@ mod tests {
             score: &score,
             dup_res: &dup_res,
             graph: &graph,
+            delta: None,
+            history: &[],
         };
 
         let html = render_html(&res, dir.path());

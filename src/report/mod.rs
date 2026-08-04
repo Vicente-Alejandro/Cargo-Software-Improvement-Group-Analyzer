@@ -22,6 +22,8 @@ pub struct AnalysisResult<'a> {
     pub score: &'a Score,
     pub dup_res: &'a crate::duplication::DuplicationResult,
     pub graph: &'a crate::coupling::CouplingGraph,
+    pub delta: Option<&'a crate::history::HistoryDelta>,
+    pub history: &'a [crate::history::HistoryRecord],
 }
 
 #[rustfmt::skip]
@@ -30,7 +32,7 @@ pub fn print_all(res: &AnalysisResult) {
     print_balance(res.metrics);
     print_coupling(res);
     print_hotspots(res);
-    print_profile(res.score);
+    print_profile(res);
 }
 
 #[rustfmt::skip]
@@ -38,7 +40,8 @@ fn print_summary(res: &AnalysisResult) {
     println!("\n{}", "Summary:".bold());
     println!("Total Functions: {}", res.metrics.len());
     let (v, i, c) = count_violations(res.metrics);
-    println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%", v, i, c, res.dup_res.percentage);
+    let d_dup = res.delta.map_or(String::new(), |d| format!(" {}", crate::history::format_delta_pct(d.delta_dup)));
+    println!("Volume > 15 lines: {}\nInterface > 4 params: {}\nComplexity > 5 branches: {}\nCode Duplication: {:.1}%{}", v, i, c, res.dup_res.percentage, d_dup);
 }
 
 pub(crate) fn count_violations(metrics: &[FunctionMetric]) -> (usize, usize, usize) {
@@ -128,19 +131,30 @@ fn print_hotspot_item(i: usize, p: &PathBuf, fr: &HashMap<PathBuf, usize>, res: 
 }
 
 #[rustfmt::skip]
-fn print_profile(s: &Score) {
+fn print_profile(res: &AnalysisResult) {
+    let s = res.score;
     println!("\n{}\nModerate Risk: {:.1}%\nHigh Risk: {:.1}%\nVery High Risk: {:.1}%\n\n─────────────────────────────────────\n{}", "Risk Profile:".bold(), s.pct_moderate, s.pct_high, s.pct_very_high, "Maintainability Rating:".bold());
-    println!("  Code Health:   {}", color_stars(s.code_stars, format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars)));
+    let d_code = res.delta.map_or(String::new(), |d| format!(" {}", crate::history::format_delta_stars(d.delta_code_stars)));
+    println!("  Code Health:   {}{}", color_stars(s.code_stars, format!("{} ({:^1} / 7)", star_string(s.code_stars), s.code_stars)), d_code);
+    print_coverage_line(res);
+    let d_vol = res.delta.map_or(String::new(), |d| format!(" {}", crate::history::format_delta_num(d.delta_loc)));
+    println!("  System Volume: {}{}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)), d_vol);
+    let d_final = res.delta.map_or(String::new(), |d| format!(" {}", crate::history::format_delta_stars(d.delta_stars)));
+    println!("  ──────────────────────────────\n  Final Score:   {}{}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold(), d_final);
+    println!("\n{}", "Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.".dimmed());
+}
+
+#[rustfmt::skip]
+fn print_coverage_line(res: &AnalysisResult) {
+    let s = res.score;
+    let d_cov = res.delta.and_then(|d| d.delta_cov).map_or(String::new(), |c| format!(" {}", crate::history::format_delta_pct(c)));
     if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
-        println!("  Test Coverage: {}", color_stars(st, format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct)));
+        println!("  Test Coverage: {}{}", color_stars(st, format!("{} ({:^1} / 7) [{:.1}% weighted]", star_string(st), st, pct)), d_cov);
     } else if !crate::coverage::has_llvm_cov() {
         println!("  Test Coverage: {}", "N/A (cargo-llvm-cov not installed. Run 'cargo install cargo-llvm-cov')".dimmed());
     } else {
         println!("  Test Coverage: {}", "N/A (No coverage data. Run 'cargo sig -a' to auto-generate)".dimmed());
     }
-    println!("  System Volume: {}", color_stars(s.volume_stars, format!("{} ({:^1} / 7) [Total: {} func LOC]", star_string(s.volume_stars), s.volume_stars, s.total_loc)));
-    println!("  ──────────────────────────────\n  Final Score:   {}", color_stars(s.stars, format!("{} ({:^1} / 7)", star_string(s.stars), s.stars)).bold());
-    println!("\n{}", "Tip: Run 'cargo sig -r' (Markdown), 'cargo sig -w' (HTML), or 'cargo sig -p' (PDF) for full reports. 'cargo sig -h' for help.".dimmed());
 }
 
 pub fn star_string(stars: u8) -> String {
@@ -377,6 +391,8 @@ mod tests {
                 blocks: vec![],
             },
             graph: &graph,
+            delta: None,
+            history: &[],
         };
         let json = build_summary_json(&res);
         assert_eq!(
@@ -419,6 +435,8 @@ mod tests {
                 blocks: vec![],
             },
             graph: &graph,
+            delta: None,
+            history: &[],
         };
 
         print_all(&res);
@@ -469,10 +487,12 @@ mod tests {
             score: &score,
             dup_res: &crate::duplication::DuplicationResult::default(),
             graph: &graph,
+            delta: None,
+            history: &[],
         };
 
         print_hotspots(&res);
-        print_profile(res.score);
+        print_profile(&res);
 
         let json = build_hotspots_json(&res);
         assert!(json.contains("risk_points"));

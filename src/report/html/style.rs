@@ -125,7 +125,12 @@ h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: #fff;
 .card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 12px 24px -10px rgba(0,0,0,0.5); }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
 .card-title { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.card-badges { display: flex; align-items: center; gap: 0.35rem; }
 .card-pill { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.badge-delta { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 999px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.delta-pos { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.delta-neg { background: var(--red-glow); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
+.delta-same { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
 .pill-green { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
 .pill-amber { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
 .pill-red { background: var(--red-glow); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
@@ -723,6 +728,14 @@ footer a:hover { color: var(--accent); text-decoration: underline; }
     overflow: visible !important;
     text-overflow: clip !important;
     display: inline-block !important;
+  }
+  .badge-delta {
+    border: 1px solid #cbd5e1 !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-size: 6.5pt !important;
+    font-weight: 700 !important;
+    padding: 0.1rem 0.35rem !important;
   }
   .code-expand-row {
     display: none !important;

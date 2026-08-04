@@ -19,6 +19,7 @@ pub mod cli;
 pub mod coupling;
 pub mod coverage;
 pub mod duplication;
+pub mod history;
 mod report;
 mod scoring;
 
@@ -38,17 +39,25 @@ fn main() -> anyhow::Result<()> {
 }
 
 #[rustfmt::skip]
+fn prepare_history(dir: &std::path::Path, s: &scoring::Score, m: &[analysis::FunctionMetric], d: &duplication::DuplicationResult) -> (Vec<history::HistoryRecord>, Option<history::HistoryDelta>) {
+    let hist = history::read_history(dir);
+    let curr = history::create_record(s, m, d, dir);
+    let delta = hist.last().map(|p| history::compute_delta(&curr, p));
+    let _ = history::record_history(dir, &curr);
+    (hist, delta)
+}
+
+#[rustfmt::skip]
 fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     let metrics = analysis::run_analysis(dir)?;
     let mut f: Vec<_> = metrics.iter().map(|m| m.file_path.clone()).collect();
     f.sort(); f.dedup();
-    let dup_res = duplication::calculate_duplication(&f);
-    let graph = coupling::CouplingGraph::build(dir, &f);
-    let churns = churn::get_frequencies(dir).unwrap_or_default();
+    let (dup, graph, churns) = (duplication::calculate_duplication(&f), coupling::CouplingGraph::build(dir, &f), churn::get_frequencies(dir).unwrap_or_default());
     let cov = coverage::load_or_generate_lcov(dir, !args.auto_cov);
-    let ctx = scoring::EvalCtx { metrics: &metrics, dup: dup_res.percentage, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
+    let ctx = scoring::EvalCtx { metrics: &metrics, dup: dup.percentage, bal: report::is_balanced(&metrics), graph: &graph, cov: &cov, churns: &churns };
     let score = scoring::evaluate(&ctx);
-    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup_res, graph: &graph };
+    let (hist, delta) = prepare_history(dir, &score, &metrics, &dup);
+    let res = report::AnalysisResult { metrics: &metrics, churns: &churns, cov: &cov, score: &score, dup_res: &dup, graph: &graph, delta: delta.as_ref(), history: &hist };
     if args.format == "json" { report::print_json(&res); } else { report::print_all(&res); }
     if args.report || args.html || args.pdf { emit_reports(args, &res, dir)?; }
     Ok(score.stars)
