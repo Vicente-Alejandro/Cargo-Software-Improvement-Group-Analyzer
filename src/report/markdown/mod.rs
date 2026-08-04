@@ -66,22 +66,13 @@ impl MarkdownCtx<'_> {
         let _ = writeln!(self.out, "| System Volume | {} | {}/7 Stars ({} func LOC) |\n", star_string(s.volume_stars), s.volume_stars, s.total_loc);
     }
 
+    #[rustfmt::skip]
     fn render_coverage_row(&mut self, s: &Score) {
         if let (Some(pct), Some(st)) = (s.cov_pct, s.cov_stars) {
-            let _ = writeln!(
-                self.out,
-                "| Test Coverage | {} | {}/7 Stars ({:.1}% churn-weighted) |",
-                star_string(st),
-                st,
-                pct
-            );
-        } else if !crate::coverage::has_llvm_cov() {
-            self.out.push_str(
-                "| Test Coverage | N/A | cargo-llvm-cov not installed (Run 'cargo install cargo-llvm-cov') |\n",
-            );
+            let _ = writeln!(self.out, "| Test Coverage | {} | {}/7 Stars ({:.1}% churn-weighted) |", star_string(st), st, pct);
         } else {
-            self.out
-                .push_str("| Test Coverage | N/A | No coverage data generated (Run 'cargo sig -a') |\n");
+            let hint = if crate::coverage::has_llvm_cov() { "No coverage data generated (Run 'cargo sig -a')" } else { "cargo-llvm-cov not installed (Run 'cargo install cargo-llvm-cov')" };
+            let _ = writeln!(self.out, "| Test Coverage | N/A | {hint} |");
         }
     }
 
@@ -154,8 +145,7 @@ impl MarkdownCtx<'_> {
 
     fn render_hotspots(&mut self) {
         let (hs, fr) = get_sorted_hotspots(self.res);
-        self.out
-            .push_str("## Hotspots (Risk × Churn Matrix)\n\n");
+        self.out.push_str("## Hotspots (Risk × Churn Matrix)\n\n");
         if hs.is_empty() {
             self.out
                 .push_str("*No high-risk / high-churn hotspots detected.*\n\n");
@@ -174,10 +164,11 @@ impl MarkdownCtx<'_> {
     }
 
     fn render_architecture(&mut self) {
-        self.out
-            .push_str("## Architecture & Component Balance\n\n");
+        self.out.push_str("## Architecture & Component Balance\n\n");
         if super::is_balanced(self.res.metrics) {
-            self.out.push_str("- **Component Balance:** All modules are balanced (< 50% codebase share each).\n");
+            self.out.push_str(
+                "- **Component Balance:** All modules are balanced (< 50% codebase share each).\n",
+            );
         } else {
             self.out.push_str(
                 "- **Component Balance:** [WARNING] One component exceeds 50% of the entire codebase.\n",

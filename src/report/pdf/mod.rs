@@ -11,12 +11,11 @@ pub enum PdfError {
 impl std::fmt::Display for PdfError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::BrowserNotFound => write!(
-                f,
-                "No headless browser (Edge, Chrome, Chromium) detected on the system."
-            ),
+            Self::BrowserNotFound => {
+                write!(f, "No headless browser (Edge, Chrome, Chromium) detected.")
+            }
             Self::CommandFailed(code) => {
-                write!(f, "Headless browser process exited with status code {code}")
+                write!(f, "Headless browser process exited with code {code}")
             }
             Self::Io(e) => write!(f, "I/O error executing headless browser: {e}"),
         }
@@ -25,48 +24,36 @@ impl std::fmt::Display for PdfError {
 
 impl std::error::Error for PdfError {}
 
-/// Generates a PDF report from the HTML report using an available headless browser.
-pub fn generate_pdf_report(html_path: &Path, root_dir: &Path) -> Result<PathBuf, PdfError> {
+fn prepare_pdf_path(root_dir: &Path) -> PathBuf {
     let out_dir = root_dir.join("tools").join("cargo-sig");
     if !out_dir.exists() {
         let _ = std::fs::create_dir_all(&out_dir);
     }
-    let pdf_path = out_dir.join("SIG_REPORT.pdf");
+    out_dir.join("SIG_REPORT.pdf")
+}
 
-    let browser = find_browser().ok_or(PdfError::BrowserNotFound)?;
-    let html_url = to_file_url(html_path);
-
-    let status = Command::new(&browser)
-        .arg("--headless=new")
-        .arg("--disable-gpu")
-        .arg("--no-pdf-header-footer")
-        .arg(format!("--print-to-pdf={}", pdf_path.display()))
-        .arg(&html_url)
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status();
-
+#[rustfmt::skip]
+fn run_browser_print(browser: &Path, html_url: &str, pdf_path: &Path, flag: &str) -> Result<(), PdfError> {
+    let status = Command::new(browser).arg(flag).arg("--disable-gpu").arg("--no-pdf-header-footer")
+        .arg(format!("--print-to-pdf={}", pdf_path.display())).arg(html_url)
+        .stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status();
     match status {
-        Ok(s) if s.success() && pdf_path.exists() => Ok(pdf_path),
-        Ok(_) => {
-            // Fallback to legacy --headless flag for older Chromium / Edge versions
-            let retry = Command::new(&browser)
-                .arg("--headless")
-                .arg("--disable-gpu")
-                .arg("--no-pdf-header-footer")
-                .arg(format!("--print-to-pdf={}", pdf_path.display()))
-                .arg(&html_url)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status();
-            match retry {
-                Ok(s) if s.success() && pdf_path.exists() => Ok(pdf_path),
-                Ok(s) => Err(PdfError::CommandFailed(s.code().unwrap_or(-1))),
-                Err(e) => Err(PdfError::Io(e)),
-            }
-        }
+        Ok(s) if s.success() && pdf_path.exists() => Ok(()),
+        Ok(s) => Err(PdfError::CommandFailed(s.code().unwrap_or(-1))),
         Err(e) => Err(PdfError::Io(e)),
     }
+}
+
+/// Generates a PDF report from the HTML report using an available headless browser.
+pub fn generate_pdf_report(html_path: &Path, root_dir: &Path) -> Result<PathBuf, PdfError> {
+    let pdf_path = prepare_pdf_path(root_dir);
+    let browser = find_browser().ok_or(PdfError::BrowserNotFound)?;
+    let html_url = to_file_url(html_path);
+    if run_browser_print(&browser, &html_url, &pdf_path, "--headless=new").is_ok() {
+        return Ok(pdf_path);
+    }
+    run_browser_print(&browser, &html_url, &pdf_path, "--headless")?;
+    Ok(pdf_path)
 }
 
 #[allow(dead_code)]
@@ -90,91 +77,61 @@ fn to_file_url(path: &Path) -> String {
     let abs_path = if path.is_absolute() {
         path.to_path_buf()
     } else {
-        std::env::current_dir()
-            .unwrap_or_default()
-            .join(path)
+        std::env::current_dir().unwrap_or_default().join(path)
     };
     let path_str = abs_path.to_string_lossy().replace('\\', "/");
     let clean = path_str.trim_start_matches('/');
     format!("file:///{clean}")
 }
 
+#[cfg(target_os = "windows")]
 fn get_browser_candidates() -> Vec<PathBuf> {
-    let mut list = Vec::new();
-    #[cfg(target_os = "windows")]
-    {
-        list.push(PathBuf::from(
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-        ));
-        list.push(PathBuf::from(
-            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        ));
-        list.push(PathBuf::from(
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        ));
-        list.push(PathBuf::from(
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        ));
-        list.push(PathBuf::from(
-            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
-        ));
-        list.push(PathBuf::from("msedge.exe"));
-        list.push(PathBuf::from("chrome.exe"));
-    }
-    #[cfg(target_os = "macos")]
-    {
-        list.push(PathBuf::from(
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        ));
-        list.push(PathBuf::from(
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-        ));
-        list.push(PathBuf::from(
-            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-        ));
-        list.push(PathBuf::from(
-            "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        ));
-        list.push(PathBuf::from("google-chrome"));
-        list.push(PathBuf::from("chromium"));
-    }
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    {
-        list.push(PathBuf::from("google-chrome"));
-        list.push(PathBuf::from("google-chrome-stable"));
-        list.push(PathBuf::from("chromium"));
-        list.push(PathBuf::from("chromium-browser"));
-        list.push(PathBuf::from("microsoft-edge"));
-        list.push(PathBuf::from("brave-browser"));
-    }
-    list
+    vec![
+        PathBuf::from(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+        PathBuf::from(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
+        PathBuf::from(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        PathBuf::from(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+        PathBuf::from(r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        PathBuf::from("msedge.exe"),
+        PathBuf::from("chrome.exe"),
+    ]
 }
 
-fn which_in_path(cmd: &Path) -> Result<PathBuf, ()> {
-    let Some(cmd_str) = cmd.to_str() else {
-        return Err(());
-    };
-    if cmd_str.contains('/') || cmd_str.contains('\\') {
-        return Err(());
-    }
+#[cfg(target_os = "macos")]
+fn get_browser_candidates() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+        PathBuf::from("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
+        PathBuf::from("/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"),
+        PathBuf::from("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+        PathBuf::from("google-chrome"),
+        PathBuf::from("chromium"),
+    ]
+}
 
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+fn get_browser_candidates() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("google-chrome"),
+        PathBuf::from("google-chrome-stable"),
+        PathBuf::from("chromium"),
+        PathBuf::from("chromium-browser"),
+        PathBuf::from("microsoft-edge"),
+        PathBuf::from("brave-browser"),
+    ]
+}
+
+#[rustfmt::skip]
+fn which_in_path(cmd: &Path) -> Result<PathBuf, ()> {
+    let cmd_str = cmd.to_str().filter(|s| !s.contains('/') && !s.contains('\\')).ok_or(())?;
     #[cfg(target_os = "windows")]
     let check = Command::new("where").arg(cmd_str).output();
     #[cfg(not(target_os = "windows"))]
     let check = Command::new("which").arg(cmd_str).output();
-
-    if let Ok(out) = check {
-        if out.status.success() {
-            let s = String::from_utf8_lossy(&out.stdout);
-            if let Some(first_line) = s.lines().next() {
-                let p = PathBuf::from(first_line.trim());
-                if p.exists() {
-                    return Ok(p);
-                }
-            }
-        }
-    }
-    Err(())
+    let out = check.map_err(|_| ())?;
+    if !out.status.success() { return Err(()); }
+    let s = String::from_utf8_lossy(&out.stdout);
+    s.lines().next().map(|l| PathBuf::from(l.trim())).filter(|p| p.exists()).ok_or(())
 }
 
 #[cfg(test)]
