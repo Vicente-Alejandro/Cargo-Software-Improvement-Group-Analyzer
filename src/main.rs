@@ -77,7 +77,7 @@ fn emit_md(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Resul
     let rel = path.strip_prefix(dir).unwrap_or(&path);
     println!(
         "\n{} {}",
-        "✅ Full Markdown report generated:".green().bold(),
+        "Full Markdown report generated:".green().bold(),
         rel.display()
     );
     Ok(())
@@ -88,7 +88,7 @@ fn emit_html(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Res
     let rel = path.strip_prefix(dir).unwrap_or(&path);
     println!(
         "\n{} {}",
-        "✅ Full HTML report generated:".green().bold(),
+        "Full HTML report generated:".green().bold(),
         rel.display()
     );
     Ok(())
@@ -101,7 +101,7 @@ fn emit_pdf(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Resu
             let rel = pdf_path.strip_prefix(dir).unwrap_or(&pdf_path);
             println!(
                 "\n{} {}",
-                "✅ Full PDF report generated:".green().bold(),
+                "Full PDF report generated:".green().bold(),
                 rel.display()
             );
         }
@@ -109,10 +109,10 @@ fn emit_pdf(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Resu
             let html_rel = html_path.strip_prefix(dir).unwrap_or(&html_path);
             println!(
                 "\n{} Unable to generate PDF automatically: {e}",
-                "⚠️".yellow().bold()
+                "[WARN]".yellow().bold()
             );
             println!(
-                "💡 Tip: Open '{}' in any web browser and click 'Export PDF / Print'.",
+                "Tip: Open '{}' in any web browser and click 'Export PDF / Print'.",
                 html_rel.display()
             );
         }

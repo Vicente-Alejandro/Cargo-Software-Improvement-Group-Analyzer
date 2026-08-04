@@ -51,7 +51,7 @@ fn append_sig_ignore(gitignore_path: &Path) -> io::Result<()> {
         .append(true)
         .open(gitignore_path)?;
     writeln!(file, "\n# cargo-sig artifacts\ntools/cargo-sig/")?;
-    println!("[cargo-sig] ✅ Added 'tools/cargo-sig/' to .gitignore.");
+    println!("[cargo-sig] Added 'tools/cargo-sig/' to .gitignore.");
     Ok(())
 }
 

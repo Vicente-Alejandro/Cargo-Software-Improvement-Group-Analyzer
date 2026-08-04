@@ -43,7 +43,7 @@ fn generate_lcov(dir: &Path) -> bool {
     if !has_llvm_cov() {
         use owo_colors::OwoColorize;
         eprintln!(
-            "{} ⚠️ cargo-llvm-cov is not installed. Run 'cargo install cargo-llvm-cov' to enable auto-coverage.",
+            "{} cargo-llvm-cov is not installed. Run 'cargo install cargo-llvm-cov' to enable auto-coverage.",
             "[cargo-sig]".bold().yellow()
         );
         return false;
@@ -88,7 +88,7 @@ fn print_lcov_done(elapsed: f32) {
     use owo_colors::OwoColorize;
     use std::io::Write;
     print!(
-        "\r{} ✅ Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n",
+        "\r{} Generating coverage data via cargo-llvm-cov... [{:.1}s]   \n",
         "[cargo-sig]".bold().cyan(),
         elapsed
     );

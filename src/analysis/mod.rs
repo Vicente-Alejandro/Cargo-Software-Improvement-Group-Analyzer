@@ -20,7 +20,7 @@ fn process_file(engine: &VolumeEngine, path: PathBuf) -> Option<Vec<FunctionMetr
     match parse_and_analyze(engine, &path) {
         Ok(m) => Some(m),
         Err(e) => {
-            eprintln!("⚠️ Skipping {}: {}", path.display(), e);
+            eprintln!("[WARN] Skipping {}: {}", path.display(), e);
             None
         }
     }
