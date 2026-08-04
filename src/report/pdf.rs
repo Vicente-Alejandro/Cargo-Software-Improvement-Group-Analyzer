@@ -42,6 +42,8 @@ pub fn generate_pdf_report(html_path: &Path, root_dir: &Path) -> Result<PathBuf,
         .arg("--no-pdf-header-footer")
         .arg(format!("--print-to-pdf={}", pdf_path.display()))
         .arg(&html_url)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .status();
 
     match status {
@@ -54,6 +56,8 @@ pub fn generate_pdf_report(html_path: &Path, root_dir: &Path) -> Result<PathBuf,
                 .arg("--no-pdf-header-footer")
                 .arg(format!("--print-to-pdf={}", pdf_path.display()))
                 .arg(&html_url)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
                 .status();
             match retry {
                 Ok(s) if s.success() && pdf_path.exists() => Ok(pdf_path),
