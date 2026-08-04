@@ -36,7 +36,7 @@ pub fn load_or_generate_lcov(
     None
 }
 
-fn generate_lcov(dir: &Path) -> bool {
+fn check_can_generate_lcov() -> bool {
     if std::env::var_os("LLVM_PROFILE_FILE").is_some() {
         return false;
     }
@@ -48,16 +48,24 @@ fn generate_lcov(dir: &Path) -> bool {
         );
         return false;
     }
-    let Ok(c) = std::process::Command::new("cargo")
+    true
+}
+
+fn spawn_lcov_cmd(dir: &Path) -> Option<std::process::Child> {
+    std::process::Command::new("cargo")
         .args(["llvm-cov", "--lcov", "--output-path", "coverage.lcov"])
         .current_dir(dir)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
-    else {
+        .ok()
+}
+
+fn generate_lcov(dir: &Path) -> bool {
+    if !check_can_generate_lcov() {
         return false;
-    };
-    wait_for_lcov(c)
+    }
+    spawn_lcov_cmd(dir).is_some_and(wait_for_lcov)
 }
 
 #[must_use]
