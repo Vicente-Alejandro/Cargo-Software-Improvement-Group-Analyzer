@@ -54,21 +54,12 @@ fn run_app(args: &SigArgs, dir: &std::path::Path) -> anyhow::Result<u8> {
     Ok(score.stars)
 }
 
-fn emit_reports(
-    args: &SigArgs,
-    res: &report::AnalysisResult,
-    dir: &std::path::Path,
-) -> anyhow::Result<()> {
+#[rustfmt::skip]
+fn emit_reports(args: &SigArgs, res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
     report::ensure_gitignored(dir)?;
-    if args.report {
-        emit_md(res, dir)?;
-    }
-    if args.html {
-        emit_html(res, dir)?;
-    }
-    if args.pdf {
-        emit_pdf(res, dir)?;
-    }
+    if args.report { emit_md(res, dir)?; }
+    if args.html { emit_html(res, dir)?; }
+    if args.pdf { emit_pdf(res, dir)?; }
     Ok(())
 }
 
@@ -96,28 +87,29 @@ fn emit_html(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Res
 
 fn emit_pdf(res: &report::AnalysisResult, dir: &std::path::Path) -> anyhow::Result<()> {
     let html_path = report::generate_html_report(res, dir)?;
-    match report::generate_pdf_report(&html_path, dir) {
-        Ok(pdf_path) => {
-            let rel = pdf_path.strip_prefix(dir).unwrap_or(&pdf_path);
-            println!(
-                "\n{} {}",
-                "Full PDF report generated:".green().bold(),
-                rel.display()
-            );
-        }
-        Err(e) => {
-            let html_rel = html_path.strip_prefix(dir).unwrap_or(&html_path);
-            println!(
-                "\n{} Unable to generate PDF automatically: {e}",
-                "[WARN]".yellow().bold()
-            );
-            println!(
-                "Tip: Open '{}' in any web browser and click 'Export PDF / Print'.",
-                html_rel.display()
-            );
-        }
+    if let Ok(pdf_path) = report::generate_pdf_report(&html_path, dir) {
+        let rel = pdf_path.strip_prefix(dir).unwrap_or(&pdf_path);
+        println!(
+            "\n{} {}",
+            "Full PDF report generated:".green().bold(),
+            rel.display()
+        );
+    } else {
+        print_pdf_fallback(&html_path, dir);
     }
     Ok(())
+}
+
+fn print_pdf_fallback(html_path: &std::path::Path, dir: &std::path::Path) {
+    let rel = html_path.strip_prefix(dir).unwrap_or(html_path);
+    println!(
+        "\n{} Unable to generate PDF automatically.",
+        "[WARN]".yellow().bold()
+    );
+    println!(
+        "Tip: Open '{}' in any web browser and click 'Export PDF / Print'.",
+        rel.display()
+    );
 }
 
 #[rustfmt::skip]
